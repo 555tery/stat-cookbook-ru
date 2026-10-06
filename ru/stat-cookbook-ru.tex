@@ -1316,11 +1316,11 @@ $R_n$ одномодальна \imp $R_n$ является интервалом
 \subsubsection{Сопряжённые априорные распределения}
 
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{|l|p{.23\columnwidth}|p{.45\columnwidth}|}
+\begin{tabular}{|l|>{\raggedright\arraybackslash}p{.23\columnwidth}|p{.45\columnwidth}|}
   \hline
   \multicolumn{3}{|c|}{Непрерывное правдоподобие (индекс $c$ обозначает константу)}\\
   \hline && \\[-2ex]
-  Функция правдоподобия & Сопряжённое априорное распределение &
+  Функция правдоподобия & Сопряжённое\newline априорное\newline распределение &
     \text{Апостериорные гиперпараметры} \\[1ex]
 
   \hline && \\[-2ex]
@@ -1338,12 +1338,14 @@ $R_n$ одномодальна \imp $R_n$ является интервалом
   $\displaystyle\left(\frac{1}{\sigma_0^2} + \frac{n}{\sigma_c^2}\right)^{-1}$
   \\[2ex]
 
-  $\norm[\mu_c,\sigma^2]$ & Масштабированное обратное распределение хи-квадрат($\nu,\sigma_0^2$) &
+  $\norm[\mu_c,\sigma^2]$ & Масштабированное обратное распределение хи-квадрат\newline
+  ($\nu,\sigma_0^2$) &
   $\nu + n$, $\displaystyle \frac{\nu\sigma_0^2 + \sumin(x_i-\mu)^2}{\nu + n}$
   \\[4ex]
 
   $\norm[\mu,\sigma^2]$ &
-  Нормальное масштабированное обратное гамма-распределение($\lambda,\nu,\alpha,\beta$) &
+  Нормальное масштабированное обратное гамма-распределение\newline
+  ($\lambda,\nu,\alpha,\beta$) &
   $\displaystyle\frac{\nu\lambda+n\xbar}{\nu+n}$, \qquad $\nu+n$, \qquad
   $\displaystyle \alpha + \frac{n}{2}$, \qquad
   $\displaystyle \beta + \frac{1}{2}\sumin(x_i-\xbar)^2 +
