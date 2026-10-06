@@ -12,6 +12,4 @@
 *.gz
 figs/*
 !figs/relationships.pdf
-stat-cookbook.pdf
-ru/stat-cookbook-ru.pdf
 ru/figs/*.pdf

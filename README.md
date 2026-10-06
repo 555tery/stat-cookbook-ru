@@ -28,7 +28,8 @@ pull request.
 шрифты Times New Roman, Arial и Courier New.
 
 Подробности приведены в [README русской версии](ru/README.md). Также можно
-скачать [собранный PDF на русском](ru/stat-cookbook-ru.pdf).
+скачать [оригинальный PDF на английском](stat-cookbook.pdf) и
+[PDF русского перевода](ru/stat-cookbook-ru.pdf).
 
 Перевод и адаптация: Danil Pokulevskii ([@555tery](https://github.com/555tery)),
 2026. Автор оригинала — Matthias Vallentin; [исходный репозиторий][stat-cookbook].
