@@ -1,42 +1,47 @@
-The [probability and statistics cookbook][stat-cookbook] contains a succinct
-representation of various topics in probability theory and statistics. It
-provides a comprehensive mathematical reference reduced to its essence, rather
-than aiming for elaborate explanations.
+В [справочнике по теории вероятностей и статистике][stat-cookbook] кратко
+изложены основные темы этих дисциплин. Это математический справочник, в котором
+ключевые результаты и формулы сведены к сути без подробных объяснений.
 
-Feel encouraged to extend the cookbook by forking it and submitting pull
-requests.
+Предложения по улучшению приветствуются: создайте форк репозитория и отправьте
+pull request.
 
-Build Setup
------------
+Сборка
+------
 
-You can build the cookbook locally via:
+Чтобы собрать оригинальную англоязычную версию, выполните:
 
     make
 
-This first generates the distribution plots via R and then compiles the LaTeX source.
-You may have to install a few missing packages via CRAN.
+Сначала команда строит графики распределений с помощью R, а затем компилирует
+исходный файл LaTeX. При необходимости установите недостающие пакеты из CRAN.
 
-Russian version
----------------
+Русская версия
+--------------
 
-The Russian translation is in `ru/stat-cookbook-ru.tex`; the English document
-and default `make` build remain unchanged. Build the translation with `make ru`.
-This target creates separately localized plots with the existing R script and
-compiles them with Tectonic (a XeTeX-based engine). R, the packages required by
-`figs/distributions.R`, Tectonic, and the Times New Roman, Arial, and Courier New
-fonts must be available.
+Перевод находится в `ru/stat-cookbook-ru.tex`. Оригинальный англоязычный
+документ и стандартная команда `make` не изменены. Чтобы собрать перевод,
+выполните `make ru`. Эта команда строит отдельные графики с русскими подписями,
+используя существующий скрипт R, и компилирует документ с помощью Tectonic —
+движка на основе XeTeX.
 
-See the [Russian version and build instructions](ru/README.md), or download the
-[compiled Russian PDF](ru/stat-cookbook-ru.pdf).
+Для сборки нужны R, пакеты, используемые в `figs/distributions.R`, Tectonic и
+шрифты Times New Roman, Arial и Courier New.
 
-License
--------
+Подробности приведены в [README русской версии](ru/README.md). Также можно
+скачать [собранный PDF на русском](ru/stat-cookbook-ru.pdf).
 
-This work is licensed under a [Attribution-NonCommercial-ShareAlike 4.0
-International License][by-nc-sa].
+Перевод и адаптация: Danil Pokulevskii ([@555tery](https://github.com/555tery)),
+2026. Автор оригинала — Matthias Vallentin; [исходный репозиторий][stat-cookbook].
 
-[![Creative Commons License][by-nc-sa-img]][by-nc-sa]
+Лицензия
+--------
+
+Оригинал и перевод распространяются на условиях лицензии Creative Commons
+[«С указанием авторства — Некоммерческая — С сохранением условий 4.0
+Международная» (CC BY-NC-SA 4.0)][by-nc-sa].
+
+[![Лицензия Creative Commons][by-nc-sa-img]][by-nc-sa]
 
 [stat-cookbook]: http://statistics.zone
-[by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[by-nc-sa]: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ru
 [by-nc-sa-img]: http://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png
