@@ -1,0 +1,2659 @@
+% ----------------------------------------------------------------------------
+%
+%                           Probability and Statistics
+%                                  Cookbook
+%
+% ----------------------------------------------------------------------------
+%
+% Copyright © Matthias Vallentin <matthias@berkeley.edu>, 2017
+%
+
+\documentclass[landscape]{article}
+
+% Unicode fonts and Russian hyphenation via the XeTeX engine.
+\usepackage{fontspec}
+\usepackage[english,main=russian]{babel}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Courier New}
+
+\usepackage{array}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{environ}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[landscape,margin=13mm,footskip=1pt,includefoot]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{multicol}
+\usepackage{needspace}
+\usepackage{rotating}
+\usepackage{tikz}
+\usepackage{threeparttable}
+\usepackage{url}
+\usepackage{xspace}
+
+% Document version, MAJOR.MINOR.PATCH. Please change with any modification
+% according to semantic versioning practices:
+%   - The major version changes when adding a new section or topic, or making a
+%     substantial content change.
+%   - The minor version changes for non-trivial fixes, corrections, or
+%     improvements.
+%   - The patch version changes for trivial fixes, such as typos in text or
+%     formulas.
+\newcommand{\version}{0.2.9}
+
+% Probability and Statistics LaTeX shortcuts.
+\input{../probstat}
+% Consistent upright operator notation in the Russian edition.
+\def\bias{\ensuremath{\operatorname{Bias}}\xspace}
+\def\se{\ensuremath{\operatorname{SE}}\xspace}
+\def\sehat{\ensuremath{\widehat{\mathrm{SE}}}}
+\def\mse{\ensuremath{\operatorname{MSE}}\xspace}
+\def\sd{\ensuremath{\operatorname{sd}}\xspace}
+\renewcommand{\hyp}[2]{\ensuremath{H_0:#1 \quad\text{против}\quad H_1:#2}}
+\renewcommand{\rv}{СВ\xspace}
+\renewcommand{\cdf}{функция распределения\xspace}
+
+% TikZ tweaks
+\usetikzlibrary{arrows,shapes}
+\usetikzlibrary{decorations.pathreplacing}
+\tikzstyle{every picture}+=[remember picture]
+\tikzstyle{na} = [baseline=-.5ex]
+
+% Move footnotes to the bottom-right corner
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyhead{}
+\fancyfoot[R]{\footnotesize \thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% Further document tweaks.
+\parindent=0pt
+\setitemize{itemsep=0.2mm,parsep=1pt}
+\setenumerate{itemsep=0.2mm,parsep=1pt}
+
+% A type of blue that doesn't look as aggressive as the default 'blue' but also
+% distinguishes well from black while not appearing to light.
+\definecolor{trueblue}{rgb}{0.0, 0.45, 0.81}
+
+% Link style (hyperref package)
+\hypersetup{
+  colorlinks=true,        % false: boxed links; true: colored links
+  linkcolor=trueblue,     % color of internal links
+  citecolor=trueblue,     % color of links to bibliography
+  filecolor=trueblue,     % color of file links
+  urlcolor=trueblue       % color of external links
+}
+
+% Personal
+\def\email{info@statistics.zone}
+\def\web{\url{http://statistics.zone/}}
+
+% An itemize list with a title that avoids a break between title and list.
+\newenvironment{titemize}[1]{
+  \begin{minipage}[h]{\columnwidth}
+    #1
+    \begin{itemize}
+}{
+    \end{itemize}
+  \end{minipage}
+}
+
+\begin{document}
+
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{\fill}
+  \textbf{\Huge Теория вероятностей\\[2ex] \huge и статистика: справочник}
+  \vfill
+  \footnotesize{
+    Русский перевод и адаптация: Danil Pokulevskii (@555tery), 2026.\\[1ex]
+    7 октября 2026 года\\[1ex]
+    \web\\[1ex]
+    Автор оригинала: \href{http://matthias.vallentin.net}{Matthias Vallentin}, © 2017.\\
+    Исходный текст: \href{https://github.com/mavam/stat-cookbook}{mavam/stat-cookbook}.\\[1ex]
+    Лицензия: \href{https://creativecommons.org/licenses/by-nc-sa/4.0/}{CC BY-NC-SA 4.0}.\\
+  }
+\end{center}
+
+\newpage
+
+\thispagestyle{empty}
+\begin{multicols*}{3}
+  \tableofcontents
+  \vfill
+  \hrule
+  \vspace{5pt}
+  {\footnotesize В этом справочнике собраны темы теории вероятностей и
+  статистики. Материал основан на публикациях~\cite{Hoel72,Wasserman03,Shumway06}
+  и лекционных материалах кафедры статистики Калифорнийского университета в
+  Беркли, а также на других источниках~\cite{Steger01,Steger02}. Если вы
+  обнаружили ошибку или хотите предложить улучшение, обратитесь через сайт
+  \web.}
+\end{multicols*}
+
+\newpage
+
+\section{Обзор распределений}
+
+\subsection{Дискретные распределения}
+
+\begin{center}
+\resizebox{\textwidth}{!}{%
+\small
+\begin{tabular}{@{}l*6{>{\begin{math}\displaystyle}c<{\end{math}}}@{}}
+  \toprule &&&&&& \\[-2ex]
+  & \text{Обозначения}\footnotemark
+  & F_X(x) & f_X(x) & \E{X} & \V{X} & M_X(s) \\[1ex]
+
+  \midrule
+
+  Равномерное распределение & \unifd & \punifd & \dunifd &
+  \frac{a+b}{2} & \frac{(b-a+1)^2-1}{12} &
+  \frac{e^{as}-e^{-(b+1)s}}{s(b-a)} \\[3ex]
+
+  Распределение Бернулли & \bern & \pbern & \dbern &
+  p & p(1-p) &
+  1-p+pe^s \\[3ex]
+
+  Биномиальное распределение & \bin & I_{1-p}(n-x,x+1) & \dbin &
+  np & np(1-p) &
+  (1-p+pe^s)^n \\[3ex]
+
+  Мультиномиальное распределение & \mult & &
+  \begin{gathered}
+    \dmult \\
+    \sum_{i=1}^k x_i = n
+  \end{gathered} &
+  \left( {\begin{array}{*{20}{c}}
+    {n{p_1}}\\
+    \vdots \\
+    {n{p_k}}
+  \end{array}} \right) & \left( {\begin{array}{*{20}{c}}
+    {n{p_1}(1 - {p_1})}&{ - n{p_1}{p_2}}\\
+    { - n{p_2}{p_1}}& \ddots
+    \end{array}} \right) &
+  \left( \sum_{i=0}^k p_i e^{s_i} \right)^n \\[3ex]
+
+  Гипергеометрическое распределение & \hyper &
+  \approx \Phi\left(\displaystyle\frac{x-np}{\sqrt{np(1-p)}}\right) &
+  \dhyper &
+  \frac{nm}{N} & \frac{nm(N-n)(N-m)}{N^2(N-1)} & \\[3ex]
+
+  Отрицательное биномиальное распределение & \nbin & \pnbin & \dnbin &
+  r\frac{1-p}{p} & r\frac{1-p}{p^2} &
+  \left(\frac{pe^s}{1-(1-p)e^s}\right)^r \\[3ex]
+
+  Геометрическое распределение & \geo &
+  \pgeo \quad x\in\mathbb N^+ &
+  \dgeo \quad x\in\mathbb N^+ &
+  \frac{1}{p} & \frac{1-p}{p^2} &
+  \frac{pe^s}{1-(1-p)e^s} \\[3ex]
+
+  Распределение Пуассона & \pois & \ppois & \dpois &
+  \lambda & \lambda &
+  e^{\lambda(e^s-1)}\\[3ex]
+
+  \bottomrule
+\end{tabular}}
+\end{center}
+
+\footnotetext{Здесь $\gamma(s,x)$ и $\Gamma(x)$ обозначают нижнюю неполную и
+полную гамма-функции (см. \S\ref{sec:math:gamma}), а $\text{B}(x,y)$ и $I_x$ —
+бета-функцию и регуляризованную неполную бета-функцию (см.
+\S\ref{sec:math:beta}).}
+
+\pagebreak
+
+\begin{figure}[H]
+  \includegraphics[scale=0.35]{figs/uniform-pmf.pdf}
+  \includegraphics[scale=0.35]{figs/binomial-pmf.pdf}
+  \includegraphics[scale=0.35]{figs/geometric-pmf.pdf}
+  \includegraphics[scale=0.35]{figs/poisson-pmf.pdf}
+
+  \includegraphics[scale=0.35]{figs/uniform-cdf-discrete.pdf}
+  \includegraphics[scale=0.35]{figs/binomial-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/geometric-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/poisson-cdf.pdf}
+\end{figure}
+
+\subsection{Непрерывные распределения}
+
+\begin{threeparttable}
+\small
+%\newcolumntype{L}{>{\varwidth[c]{\linewidth}}l<{\endvarwidth}}
+\newcolumntype{M}{>{\begin{math}\displaystyle}c<{\end{math}}}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}l*6{M}@{}}
+  \toprule &&&&&& \\[-2ex]
+  & \text{Обозначения}
+  & F_X(x) & f_X(x) & \E{X} & \V{X} & M_X(s) \\[1ex]
+
+  \midrule
+
+  Равномерное распределение & \unif & \punif & \dunif &
+  \frac{a+b}{2} & \frac{(b-a)^2}{12} &
+  \frac{e^{sb}-e^{sa}}{s(b-a)} \\[3ex]
+
+  Нормальное распределение & \norm &
+  \Phi(x)=\displaystyle\int_{-\infty}^x \phi(t)\,dt &
+  \phi(x)=\dnorm &
+  \mu & \sigma^2 &
+  \Exp{\mu s + \frac{\sigma^2s^2}{2}}\\[3ex]
+
+  Логнормальное распределение & \ln\norm&
+  \frac{1}{2}+\frac{1}{2} \erf\left[\frac{\ln x-\mu}{\sqrt{2\sigma^2}}\right] &
+  \frac{1}{x\sqrt{2\pi\sigma^2}} \Exp{-\frac{(\ln x - \mu)^2}{2\sigma^2}} &
+  e^{\mu+\sigma^2/2} &
+  (e^{\sigma^2}-1) e^{2\mu+\sigma^2} &
+  \\[3ex]
+
+  Многомерное нормальное распределение & \mvn & &
+  (2\pi)^{-k/2} |\Sigma|^{-1/2} e^{-\frac{1}{2}(x-\mu)^T \Sigma^{-1}(x-\mu)} &
+  \mu & \Sigma &
+  \Exp{\mu^T s + \frac{1}{2} s^T \Sigma s}\\[3ex]
+
+  Распределение Стьюдента $t$ & \text{Стьюдент}(\nu)
+  & I_x\left( \frac{\nu}{2},\frac{\nu}{2} \right)
+  & \frac{\Gamma\left(\frac{\nu+1}{2}\right)}
+    {\sqrt{\nu\pi}\Gamma\left(\frac{\nu}{2}\right)}
+    \left(1+\frac{x^2}{\nu}\right)^{-(\nu+1)/2}
+  & 0 \quad \nu  > 1
+  & \begin{cases}
+      \displaystyle\frac{\nu}{\nu-2} & \nu > 2 \\
+      \infty & 1 < \nu \le 2
+    \end{cases}
+  & \\[3ex]
+
+  Хи-квадрат & \chisq &
+  \frac{1}{\Gamma(k/2)} \gamma\left(\frac{k}{2}, \frac{x}{2}\right) &
+  \frac{1}{2^{k/2} \Gamma(k/2)} x^{k/2-1} e^{-x/2}&
+  k & 2k &
+  (1-2s)^{-k/2} \; s<1/2\\[3ex]
+
+  Распределение F & \text{F}(d_1,d_2) &
+  I_\frac{d_1x}{d_1x+d_2}\left(\frac{d_1}{2},\frac{d_2}{2}\right) &
+  \frac{\sqrt{\frac{(d_1x)^{d_1} d_2^{d_2}}{(d_1x+d_2)^{d_1+d_2}}}}
+    {x\mathrm{B}\left(\frac{d_1}{2},\frac{d_1}{2}\right)} &
+  \frac{d_2}{d_2-2} %\; d_2 > 2
+  & \frac{2d_2^2(d_1+d_2-2)}{d_1(d_2-2)^2(d_2-4)} %\; d_2 > 4
+  & \\[3ex]
+
+  Экспоненциальное распределение\tnote{$\ast$} & \ex & \pex & \dex &
+  \beta & \beta^2 &
+  \frac{1}{1-\frac{s}{\beta}} \left(s<\beta\right) \\[3ex]
+
+  Гамма-распределение\tnote{$\ast$} & \gam &
+  \frac{\gamma(\alpha,\beta x)}{\Gamma(\alpha)} & \dgamma &
+  \frac{\alpha}{\beta} & \frac{\alpha}{\beta^2} &
+  \left(\frac{1}{1-\frac{s}{\beta}} \right)^\alpha \left(s<\beta\right)\\[3ex]
+
+  Обратное гамма-распределение & \invgamma & \pinvgamma & \dinvgamma &
+  \frac{\beta}{\alpha-1} \; \alpha>1 &
+  \frac{\beta^2}{(\alpha-1)^2(\alpha-2)} \; \alpha > 2 &
+  \frac{2(-\beta s)^{\alpha/2}}{\Gamma(\alpha)}K_\alpha
+  \left( \sqrt{-4\beta s} \right)\\[3ex]
+
+  Распределение Дирихле & \dir & & \ddir &
+  \frac{\alpha_i}{\sum_{i=1}^k \alpha_i} &
+  \frac{\E{X_i}(1-\E{X_i})}{\sum_{i=1}^k\alpha_i + 1} & \\[3ex]
+
+  Бета-распределение & \bet & I_x(\alpha,\beta)& \dbeta &
+  \frac{\alpha}{\alpha+\beta} &
+  \frac{\alpha\beta}{(\alpha+\beta)^2(\alpha+\beta+1)} &
+  1+\sum_{k=1}^{\infty} \left( \prod_{r=0}^{k-1}
+    \frac{\alpha+r}{\alpha+\beta+r} \right) \frac{s^k}{k!} \\[3ex]
+
+  Распределение Вейбулла & \mathrm{Weibull}(\lambda, k) & 1 - e^{-(x/\lambda)^k} & \dweibull &
+  \lambda \Gamma\left(1 + \frac{1}{k} \right) &
+  \lambda^2 \Gamma\left(1 + \frac{2}{k}\right) - \mu^2 &
+  \sum_{n=0}^\infty \frac{s^n \lambda^n}{n!} \Gamma\left(1+\frac{n}{k}\right)
+  \\[3ex]
+
+  Распределение Парето & \mathrm{Pareto}(x_m, \alpha) &
+  1 - \left(\frac{x_m}{x} \right)^\alpha \; x\ge x_m &
+  \alpha\frac{x_m^\alpha}{x^{\alpha+1}} \quad x\ge x_m&
+  \frac{\alpha x_m}{\alpha-1} \; \alpha>1 &
+  \frac{x_m^2\alpha}{(\alpha-1)^2(\alpha-2)} \; \alpha>2 &
+  \alpha(-x_m s)^\alpha \Gamma(-\alpha,-x_m s) \; s<0\\[3ex]
+
+  \bottomrule
+\end{tabular}}
+\begin{tablenotes}
+\item[$\ast$] Используем параметризацию с параметром \emph{интенсивности}, где
+  $\beta=\frac{1}{\lambda}$. В некоторых учебниках $\beta$ используют как параметр
+  \emph{масштаба}~\cite{Wasserman03}.
+\end{tablenotes}
+\end{threeparttable}
+
+\begin{figure}[H]
+  \includegraphics[scale=0.35]{figs/uniform-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/normal-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/lognormal-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/student-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/chisquare-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/f-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/exponential-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/gamma-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/invgamma-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/beta-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/weibull-pdf.pdf}
+  \includegraphics[scale=0.35]{figs/pareto-pdf.pdf}
+\end{figure}
+
+\begin{figure}[H]
+  \includegraphics[scale=0.35]{figs/uniform-cdf-continuous.pdf}
+  \includegraphics[scale=0.35]{figs/normal-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/lognormal-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/student-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/chisquare-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/f-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/exponential-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/gamma-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/invgamma-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/beta-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/weibull-cdf.pdf}
+  \includegraphics[scale=0.35]{figs/pareto-cdf.pdf}
+\end{figure}
+
+\begin{multicols*}{2}
+
+\section{Теория вероятностей}
+
+Определения
+\begin{itemize}
+  \item Пространство элементарных исходов $\Omega$
+  \item Исход (точка или элемент) $\omega \in \Omega$
+  \item Событие $A \subseteq \Omega$
+  \item $\sigma$-алгебра $\mathcal{A}$
+    \begin{enumerate}
+      \item $\varnothing \in \mathcal{A}$
+      \item $A_1,A_2,\dots, \in \mathcal{A}
+        \imp \bigcup_{i=1}^\infty A_i \in \mathcal{A}$
+      \item $A \in \mathcal{A} \imp \comp{A} \in \mathcal{A}$
+    \end{enumerate}
+  \item Вероятностная мера $\prob$
+    \begin{enumerate}
+      \item $\Pr{A} \ge 0 \quad \forall A$
+      \item $\Pr{\Omega} = 1$
+      \item $\Pr{\displaystyle\bigsqcup_{i=1}^\infty A_i}
+        = \displaystyle\sum_{i=1}^\infty \Pr{A_i}$
+    \end{enumerate}
+  \item Вероятностное пространство $(\Omega,\mathcal{A},\prob)$
+\end{itemize}
+
+Свойства
+\begin{itemize}
+  \item $\Pr{\varnothing} = 0$
+  \item $B = \Omega \cap B = (A \cup \comp{A}) \cap B
+    = (A \cap B) \cup (\comp{A} \cap B)$
+  \item $\Pr{\comp{A}} = 1 - \Pr{A}$
+  \item $\Pr{B} = \Pr{A \cap B} + \Pr{\comp{A} \cap B}$
+  \item $\Pr{\Omega} = 1 \qquad \Pr{\varnothing} = 0$
+  \item $\comp{\left(\bigcup_n A_n\right)} = \bigcap_n \comp{A_n}
+    \quad
+    \comp{\left(\bigcap_n A_n\right)} = \bigcup_n \comp{A_n}
+    \qquad$
+    \textsc{Де Моргана}
+  \item $\Pr{\bigcup_n A_n}
+    = 1 - \Pr{\bigcap_n \comp{A_n}}$
+  \item $\Pr{A \cup B} = \Pr{A} + \Pr{B} - \Pr{A \cap B}\\[1ex]
+    \imp \Pr{A \cup B} \le \Pr{A} + \Pr{B}$
+  \item $\Pr{A \cup B}
+    = \Pr{A \cap \comp{B}} + \Pr{\comp{A} \cap B} + \Pr{A \cap B}$
+  \item $\Pr{A \cap \comp{B}} = \Pr{A} - \Pr{A \cap B}$
+\end{itemize}
+
+Непрерывность вероятностной меры
+\begin{itemize}
+  \item $A_1 \subset A_2 \subset \dots \imp \limn \Pr{A_n} = \Pr{A}
+    \quad\text{где } A = \bigcup_{i=1}^\infty A_i$
+  \item $A_1 \supset A_2 \supset \dots \imp \limn \Pr{A_n} = \Pr{A}
+    \quad\text{где } A = \bigcap_{i=1}^\infty A_i$
+\end{itemize}
+
+Независимость \ind
+\[A \ind B \eqv \Pr{A \cap B} = \Pr{A}\Pr{B}\]
+
+Условная вероятность
+\[\Pr{A \giv B} = \frac{\Pr{A \cap B}}{\Pr{B}} \qquad \Pr{B} > 0\]
+
+Формула полной вероятности
+\[ \Pr{B} = \sum_{i=1}^n \Pr{B|A_i}\Pr{A_i}
+  \qquad \Omega = \bigsqcup_{i=1}^n A_i\]
+
+\textsc{Теорема Байеса}
+\[\Pr{A_i \giv B}
+= \frac{\Pr{B \giv A_i}\Pr{A_i}}{\sum_{j=1}^n \Pr{B \giv A_j}\Pr{A_j}}
+\qquad \Omega = \bigsqcup_{i=1}^n A_i\]
+
+Принцип включения–исключения
+\[\biggl|\bigcup_{i=1}^n A_i\biggr| = \sum_{r=1}^n(-1)^{r-1}
+  \sum_{i \le i_1 < \dots < i_r \le n}\biggl|\bigcap_{j=1}^r A_{i_j}\biggr|\]
+
+\section{Случайные величины}
+
+Случайная величина (СВ)
+\[X: \Omega \to \R\]
+
+Функция вероятностей (PMF)
+\[f_X(x) = \Pr{X = x} = \Pr{\{\omega\in\Omega:X(\omega) = x\}}\]
+
+Плотность вероятности (PDF)
+\[\Pr{a \le X \le b} = \int_a^b f(x)\dx\]
+
+Функция распределения (CDF)
+\[F_X:\R \to [0,1] \qquad F_X(x) = \Pr{X \le x}\]
+
+\begin{enumerate}
+  \item Неубывающая: $x_1 < x_2 \imp F(x_1) \le F(x_2)$
+  \item Нормированная: $\lim_{x\to -\infty} = 0$ и $\lim_{x\to \infty} = 1$
+  \item Непрерывная справа: $\lim_{y\downarrow x} F(y) = F(x)$
+\end{enumerate}
+
+\[\Pr{a\le Y\le b \giv X=x} = \int_a^b f_{Y|X}(y\giv x) dy \qquad a \le b\]
+\[ f_{Y|X}(y\giv x) = \frac{f(x,y)}{f_X(x)} \]
+
+Независимость
+\begin{enumerate}
+  \item $\Pr{X \le x, Y \le y} = \Pr{X \le x}\Pr{Y \le y}$
+  \item $f_{X,Y}(x,y) = f_X(x)f_Y(y)$
+\end{enumerate}
+
+\subsection{Преобразования}
+
+Функция преобразования
+\[Z = \transform(X)\]
+
+Дискретный случай
+\[f_Z(z) = \Pr{\transform(X) = z} = \Pr{\{x:\transform(x) = z\}}
+= \Pr{X \in \transform^{-1}(z)} = \sum_{x \in \transform^{-1}(z)} \!\!\!f_X(x)\]
+
+Непрерывный случай
+\[F_Z(z) = \Pr{\transform(X) \le z} = \int_{A_z} f(x) \dx \quad
+    \text{где } A_z = \{x:\transform(x) \le z\}\]
+
+Особый случай, если $\transform$ строго монотонна
+\[f_Z(z)
+    = f_X(\transform^{-1}(z))
+      \left|\frac{d}{dz}\transform^{-1}(z)\right|
+    = f_X(x)\left|\frac{dx}{dz}\right|
+    = f_X(x)\frac{1}{|J|}\]
+
+Правило ленивого статистика
+\[\E{Z} = \int \transform(x) \dfx\]
+\[\E{I_A(x)} = \int I_A(x) \dfx = \int_A \dfx = \Pr{X \in A}\]
+
+Свёртка
+\begin{itemize}
+  \item $ Z:=X+Y \qquad
+    f_Z(z)=\displaystyle\int_{-\infty}^{\infty} f_{X,Y}(x,z-x)\,dx
+    \;\stackrel{X,Y \ge 0}{=}\; \int_0^z f_{X,Y}(x,z-x)\,dx$
+  \item $ Z:=|X-Y| \qquad
+    f_Z(z)=\displaystyle2\int_0^\infty f_{X,Y}(x,z+x)\,dx$
+    %\;\stackrel{X,Y \ge 0}{=}\; \int_0^\infty f_{X,Y}(x,z+x)\,dx$
+  \item $ Z:=\displaystyle\frac{X}{Y} \qquad
+    f_Z(z)=\displaystyle\int_{-\infty}^{\infty} |y| f_{X,Y}(yz,y)\,dy
+    \;\stackrel{\ind}{=}\; \int_{-\infty}^{\infty} |y| f_X(yz)f_Y(y)\,dy$
+\end{itemize}
+
+%  \subsection{Joint Distribution}
+%  \begin{itemize}
+%    \item $f(x,y) = \Pr{X \le k, Y \le m)}
+%      = \displaystyle\int_{-\infty}^k\int_{-\infty}^m f(x,y)\,dy\,dx$
+%    \item $\Pr{a < X \le b, c < y \le d} = F(b,d) - F(a,d) - F(b,c) + F(a,c)$
+%    \item $f_X(x) = \displaystyle\int_{-\infty}^\infty f(x,y)\,dy \qquad
+%      f_Y(y) = \displaystyle\int_{-\infty}^\infty f(x,y)\,dx$
+%  \end{itemize}
+
+%  Order Statistics
+%  \begin{itemize}
+%    \item $U_i\ind U_j$ continuous \textsc{RVs} with common density $f$
+%    \item $X_1(\omega) < \dots < X_n(\omega)$ permuted set of $U_i$'s
+%    \item $X_k = $ \emph{k$^{th}$ order statistic}
+%    \item $X_1(\omega) = \min(U_1(\omega),\dots,U_n(\omega))$
+%    \item $X_n(\omega) = \max(U_1(\omega),\dots,U_n(\omega))$
+%    \item $R(\omega) = X_n(\omega) - X_1(\omega)$
+%  \end{itemize}
+
+\section{Математическое ожидание}
+
+Определение и свойства
+\begin{itemize}
+  \item $\E{X} = \mu_X = \displaystyle \int x \dfx =
+    \begin{cases}
+      \displaystyle\sum_x xf_X(x) & \text{если X дискретна} \\\\
+      \displaystyle\int xf_X(x)\dx & \text{если X непрерывна}
+    \end{cases}$
+  \item $\Pr{X=c}=1 \imp \E{X} = c$
+  \item $\E{cX} = c\,\E{X}$
+  \item $\E{X+Y} = \E{X}+\E{Y}$
+  \item $\E{XY} = \displaystyle\int_{X,Y} xy f_{X,Y}(x,y)\dfx\dfy$
+  \item $\E{\transform(Y)} \neq \transform(\E{X}) \qquad$
+    (см.~\hyperref[jensen]{\textsc{неравенство Йенсена}})
+  \item $\Pr{X \ge Y} = 1 \imp \E{X}\ge\E{Y}$
+  \item $\Pr{X=Y} = 1 \imp \E{X}=\E{Y}$
+%  \item $\Pr{\lvert Y\rvert\le c} = 1 \imp \E{Y}<\infty
+%    \wedge \lvert\E{X}\rvert\le c$
+  \item $\E{X} = \displaystyle\sum_{x=1}^\infty \Pr{X\ge x}$ \qquad X дискретна
+\end{itemize}
+
+Выборочное среднее
+\[\samplemean = \frac{1}{n}\sum_{i=1}^n X_i\]
+
+\begin{titemize}{Условное математическое ожидание}
+  \item $\E{Y\giv X=x} = \displaystyle\int y f(y\giv x)\dy$
+  \item $\E{X} = \E{\E{X\giv Y}}$
+  \item $\E{\transform(X,Y)\giv X=x}
+    = \displaystyle\int_{-\infty}^\infty \transform(x,y)f_{Y|X}(y\giv x)\dy$
+  \item $\E{\transform(Y,Z)\giv X=x} =
+    \displaystyle\int_{-\infty}^\infty\transform(y,z)
+    f_{(Y,Z)|X}(y,z\giv x)\,dy\,dz$
+  \item $\E{Y+Z\giv X} = \E{Y\giv X} + \E{Z\giv X}$
+  \item $\E{\transform(X)Y\giv X} = \transform(X)\E{Y\giv X}$
+  \item $\E{\transform(X,Y)} = \E[X]{\E{\transform(X,Y)\giv X}}$
+  \item $\E{Y\giv X} = c \imp \cov{X,Y}=0$
+\end{titemize}
+
+\section{Дисперсия}
+
+\begin{titemize}{Определение и свойства}
+  \item $\V{X} = \sigma_X^2 = \E{(X-\E{X})^2} = \E{X^2} - \E{X}^2$
+  \item $\V{\displaystyle\sum_{i=1}^n X_i} =
+    \displaystyle\sum_{i=1}^n \V{X_i} + \sum_{i\ne j}\cov{X_i,X_j}$
+%    \stackrel{X_i \ind X_j}{=}\sum_{i=1}^n\V{X_i}$
+  \item $\V{\displaystyle\sum_{i=1}^n X_i} =
+    \displaystyle\sum_{i=1}^n\V{X_i} \quad$ если $X_i \ind X_j$
+\end{titemize}
+
+Стандартное отклонение
+\[\sd[X] = \sqrt{\V{X}} = \sigma_X\]
+
+Ковариация
+\begin{itemize}
+  \item $\cov{X,Y} = \E{(X-\E{X})(Y-\E{Y})} = \E{XY}-\E{X}\E{Y}$
+  \item $\cov{X,a} = 0$
+  \item $\cov{X,X} = \V{X}$
+  \item $\cov{X,Y} = \cov{Y,X}$
+  \item $\cov{aX,bY} = ab\,\cov{X,Y}$
+  \item $\cov{X+a,Y+b} = \cov{X,Y}$
+  \item $\cov{\displaystyle\sumin X_i, \sumjm Y_j}
+    = \displaystyle\sumin\sumjm\cov{X_i, Y_j}$
+\end{itemize}
+
+Корреляция
+\[\corr{X,Y} = \displaystyle\frac{\cov{X,Y}}{\sqrt{\V{X}\V{Y}}}\]
+
+Независимость
+\[X\ind Y \imp \corr{X,Y} = 0 \eqv \cov{X,Y} = 0 \eqv \E{XY}=\E{X}\E{Y}\]
+
+Выборочная дисперсия
+\[\samplevar = \frac{1}{n-1}\sum_{i=1}^n(X_i-\samplemean)^2\]
+
+Условная дисперсия
+\begin{itemize}
+  \item $\V{Y\giv X} = \E{(Y-\E{Y\giv X})^2\giv X} =\E{Y^2\giv X}-\E{Y\giv X}^2$
+  \item $\V{Y} = \E{\V{Y\giv X}}+\V{\E{Y\giv X}}$
+\end{itemize}
+
+\section{Неравенства}
+
+\textsc{Коши--Буняковского--Шварца}
+\[\E{XY}^2 \le \E{X^2}\E{Y^2}\]
+
+\textsc{Маркова}
+\[\Pr{\transform(X) \ge t}\le\frac{\E{\transform(X)}}{t}\]
+
+\textsc{Чебышёва}
+\[\Pr{\lvert X-\E{X}\rvert \ge t} \le \frac{\V{X}}{t^2}\]
+
+\textsc{Чернова}
+\[\Pr{X \ge (1+\delta)\mu}
+\le \left(\frac{e^\delta}{(1+\delta)^{1+\delta}}\right) \quad \delta>-1\]
+
+\textsc{Хёффдинга}
+\[X_1,\ldots,X_n \; \textrm{независимы}
+\;\wedge\; \Pr{X_i\in[a_i,b_i]} = 1 \;\wedge\; 1 \le i \le n \]
+\[\Pr{\Xbar-\E{\Xbar} \ge t} \le e^{-2nt^2} \quad t>0 \]
+\[\Pr{|\Xbar-\E{\Xbar}| \ge t} \le 2\Exp{-\frac{2n^2t^2}{\sumin(b_i-a_i)^2}}
+\quad t>0\]
+
+\textsc{Йенсена}\label{jensen}
+\[\E{\transform(X)} \ge \transform(\E{X}) \quad
+  \transform \text{ — выпуклая функция}\]
+
+\section{Связи между распределениями}
+
+Биномиальное распределение
+\begin{itemize}
+  \item $X_i \dist \bern \imp \displaystyle\sum_{i=1}^n X_i \dist \bin$
+  \item $X\dist\bin, Y\dist\bin[m,p] \imp X+Y\dist\bin[n+m,p]$
+  \item $\limn\bin = \pois[np]$ — при большом числе испытаний $n$ и малой
+    вероятности успеха $p$
+  \item $\limn\bin = \norm[np,np(1-p)]$ — если ожидаемые числа успехов $np$ и
+    неудач $n(1-p)$ достаточно велики
+\end{itemize}
+
+Отрицательное биномиальное распределение
+\begin{itemize}
+  \item $ X\dist \nbin[1,p] = \geo $
+  \item $ X\dist \nbin[r,p] = \sum_{i=1}^r \geo $
+  \item $X_i\dist \nbin[r_i,p] \imp \sum X_i\dist \nbin[\sum r_i,p] $
+  \item $X\dist \nbin[r,p].\; Y\dist \bin[s+r,p] \imp \Pr{X\le s} = \Pr{Y\ge r}$
+\end{itemize}
+
+Распределение Пуассона
+\begin{itemize}
+  \item $X_i\dist\pois[\lambda_i] \wedge X_i \ind X_j
+    \imp \displaystyle\sumin X_i \dist \pois[\displaystyle\sumin \lambda_i]$
+  \item $X_i\dist\pois[\lambda_i] \wedge X_i \ind X_j
+    \imp X_i\,\left|\displaystyle\sumjn X_j\right. \dist
+   \bin[\displaystyle\sumjn X_j,\displaystyle\frac{\lambda_i}{\sumjn\lambda_j}]$
+\end{itemize}
+
+Экспоненциальное распределение
+\begin{itemize}
+%    \item $\forall n \in \mathbb N^+: X_i\dist\ex{\lambda}
+  \item $X_i\dist\ex \wedge  X_i \ind X_j
+    \imp \displaystyle\sumin X_i\dist \gam[n,\beta]$
+  \item Свойство отсутствия памяти: $\Pr{X>x+y\giv X>y}=\Pr{X>x}$
+\end{itemize}
+
+Нормальное распределение
+\begin{itemize}
+  \item $X\dist \norm[\mu,\sigma^2]
+    \imp \left(\frac{X-\mu}{\sigma}\right)\dist\norm[0,1] $
+  \item $X\dist \norm[\mu,\sigma^2] \wedge Z = aX+b
+    \imp Z\dist\norm[a\mu+b,a^2\sigma^2] $
+  \item $X_i\dist\norm[\mu_i,\sigma_i^2] \wedge X_i \ind X_j
+     \imp \sum_i X_i \dist \norm[\sum_i\mu_i,\sum_i\sigma_i^2]$
+   \item $\Pr{a < X \le b}= \Phi\left(\frac{b-\mu}{\sigma}\right)
+     - \Phi\left(\frac{a-\mu}{\sigma}\right) $
+  \item $\Phi(-x) = 1 - \Phi(x) \qquad \phi'(x) = -x\phi(x) \qquad
+    \phi''(x) = (x^2-1)\phi(x)$
+  \item Верхний квантиль распределения $\norm[0,1]$: $z_{\alpha} = \Phi^{-1}(1-\alpha)$
+\end{itemize}
+
+Гамма-распределение
+\begin{itemize}
+  \item $X\dist\gam \eqv X/\beta \dist\gam[\alpha,1]$
+  \item $\gam\dist \sum_{i=1}^\alpha\ex$
+  \item $X_i\dist\gam[\alpha_i,\beta] \wedge X_i \ind X_j \imp
+    \sum_i X_i\dist \gam[\sum_i \alpha_i,\beta]$
+  \item $\displaystyle\frac{\Gamma(\alpha)}{\lambda^\alpha}
+    = \displaystyle\int_0^\infty x^{\alpha-1} e^{-\lambda x} \dx$
+\end{itemize}
+
+Бета-распределение
+\begin{itemize}
+  \item $\displaystyle
+    \frac{1}{\text{B}(\alpha,\beta)}x^{\alpha-1}(1-x)^{\beta-1}
+    = \frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}
+    x^{\alpha-1}(1-x)^{\beta-1} $
+  \item $\E{X^k}
+    = \displaystyle\frac{\text{B}(\alpha+k,\beta)}{\text{B}(\alpha,\beta)}
+    = \displaystyle\frac{\alpha+k-1}{\alpha+\beta+k-1}\E{X^{k-1}}$
+  \item $\bet[1,1] \dist \unif[0,1]$
+\end{itemize}
+
+\section{Производящая функция вероятностей и производящая функция моментов}
+
+\begin{itemize}
+  \item $G_X(t) = \E{t^X} \qquad |t| < 1$
+  \item $M_X(t) = G_X(e^t) = \E{e^{Xt}}
+    = \E{ \displaystyle\sum_{i=0}^\infty \frac{(Xt)^i}{i!}}
+    = \displaystyle\sum_{i=0}^\infty \frac{\E{X^i}}{i!}\cdot t^i$
+  \item $\Pr{X=0} = G_X(0)$
+  \item $\Pr{X=1}=G_X'(0)$
+  \item $\Pr{X=i} = \displaystyle\frac{G_X^{(i)}(0)}{i!}$
+  \item $\E{X} = G_X'(1^-)$
+  \item $\E{X^k} = M_X^{(k)}(0)$
+  \item $\E{\displaystyle\frac{X!}{(X-k)!}} = G_X^{(k)}(1^-)$
+  \item $\V{X} = G_X''(1^-) + G_X'(1^-)
+    - \left(G_X'(1^-)\right)^2$
+  \item $G_X(t) = G_Y(t) \imp X \stackrel{d}{=} Y$
+\end{itemize}
+
+\section{Многомерные распределения}
+
+\subsection{Стандартное двумерное нормальное распределение}
+
+Пусть $X,Y\dist\norm[0,1] \wedge X\ind Z$, где
+$Y = \rho X + \sqrt{1-\rho^2}Z$\\
+
+Совместная плотность
+\[
+f(x,y) = \frac{1}{2 \pi \sqrt{1-\rho^2}}
+\Exp{-\frac{x^2 + y^2 - 2\rho x y}{2 (1-\rho^2)}}
+\]
+
+Условные распределения
+\[
+(Y\giv X=x) \dist \norm[\rho x,1-\rho^2] \qquad\text{и}\qquad
+(X\giv Y=y) \dist \norm[\rho y,1-\rho^2]
+\]
+
+Независимость
+\[X \ind Y \eqv \rho = 0\]
+
+\subsection{Двумерное нормальное распределение}
+% - http://www.athenasc.com/Bivariate-Normal.pdf
+% - http://mathworld.wolfram.com/BivariateNormalDistribution.html
+
+Пусть $X\dist\norm[\mu_x,\sigma_x^2]$
+  и $Y\dist\norm[\mu_y,\sigma_y^2]$.
+\[f(x,y) = \frac{1}{2 \pi \sigma_x \sigma_y \sqrt{1-\rho^2}}
+\Exp{-\frac{z}{2 (1-\rho^2)}}\]
+\[ z =
+  \left[
+  \left(\frac{x-\mu_x}{\sigma_x}\right)^2
+    + \left(\frac{y-\mu_y}{\sigma_y}\right)^2
+    - 2\rho\left(\frac{x-\mu_x}{\sigma_x}\right)
+      \left(\frac{y-\mu_y}{\sigma_y}\right)
+  \right]
+\]
+
+Условное математическое ожидание и условная дисперсия
+\[\E{X\giv Y} = \E{X} + \rho\frac{\sigma_X}{\sigma_Y}(Y-\E{Y})\]
+\[\V{X\giv Y} = \sigma_X \sqrt{1-\rho^2}\]
+
+\subsection{Многомерное нормальное распределение}
+
+Ковариационная матрица $\Sigma$ \quad (матрица точности $\Sigma^{-1}$)
+\[\Sigma =
+  \begin{pmatrix}
+  \V{X_1} & \cdots & \cov{X_1,X_k} \\
+  \vdots & \ddots & \vdots \\
+  \cov{X_k,X_1} & \cdots & \V{X_k}
+  \end{pmatrix}\]
+
+Если $X \dist \norm[\mu,\Sigma]$,
+\[f_X(x) = (2\pi)^{-n/2} \left|\Sigma\right|^{-1/2}
+\Exp{-\frac{1}{2}(x-\mu)^T\Sigma^{-1}(x-\mu)} \]
+
+Свойства
+\begin{itemize}
+  \item $Z \dist \norm[0,1] \wedge X = \mu+\Sigma^{1/2}Z
+    \imp X \dist \norm[\mu,\Sigma]$
+  \item $X \dist \norm[\mu,\Sigma] \imp \Sigma^{-1/2}(X-\mu) \dist \norm[0,1]$
+  \item $X \dist \norm[\mu,\Sigma] \imp AX \dist \norm[A\mu, A\Sigma A^T]$
+  \item $X \dist \norm[\mu,\Sigma] \wedge \|a\| = k
+    \imp a^TX \dist \norm[a^T\mu, a^T\Sigma a]$
+\end{itemize}
+
+\section{Сходимость}
+
+Пусть $\{X_1,X_2,\ldots\}$ — последовательность \rv, а $X$ — ещё одна \rv.
+Пусть $F_n$ и $F$ — \cdf величин $X_n$ и $X$ соответственно.
+
+Виды сходимости
+\begin{enumerate}
+  \item По распределению (сходимость по закону): $X_n \dconv X$
+    \[\limn F_n(t) = F(t) \qquad
+      \forall t\colon F \text{ непрерывна в точке }t\]
+  \item По вероятности: $X_n \pconv X$
+    \[(\forall \varepsilon > 0) \;
+    \lim_{n\to\infty} \Pr{|X_n -X| > \varepsilon} = 0\]
+  \item Почти наверное (сильно): $X_n \asconv X$
+    \[\Pr{\limn X_n=X} = \Pr{\omega\in\Omega: \limn X_n(\omega)=X(\omega)}=1\]
+  \item В среднем квадратичном смысле ($L_2$): $X_n \qmconv X$
+    \[\lim_{n\to\infty} \E{(X_n - X)^2} = 0\]
+\end{enumerate}
+
+Связи
+\begin{itemize}
+  \item $X_n \qmconv X \imp X_n \pconv X \imp X_n \dconv X$
+  \item $X_n \asconv X \imp X_n \pconv X$
+  \item $X_n \dconv X \wedge (\exists c \in \R) \; \Pr{X=c} = 1
+    \imp X_n \pconv X$
+  \item $X_n \pconv X \wedge Y_n \pconv Y
+    \imp X_n + Y_n \pconv X + Y$
+  \item $X_n \qmconv X \wedge Y_n \qmconv Y
+    \imp X_n + Y_n \qmconv X + Y$
+  \item $X_n \pconv X \wedge Y_n \pconv Y
+    \imp X_nY_n \pconv XY$
+  \item $X_n \pconv X \imp \transform(X_n) \pconv \transform(X)$
+  \item $X_n \dconv X \imp \transform(X_n) \dconv \transform(X)$
+  \item $X_n \qmconv b \eqv \lim_{n\to\infty} \E{X_n}=b
+    \wedge \lim_{n\to\infty} \V{X_n} = 0$
+  \item $X_1,\dots,X_n\; \iid \wedge \E{X}=\mu \wedge \V{X}<\infty
+    \eqv \samplemean \qmconv \mu$
+\end{itemize}
+
+\textsc{Теорема Слуцкого}
+\begin{itemize}
+  \item $X_n \dconv X \text{ и } Y_n \pconv c
+    \imp X_n + Y_n \dconv X + c$
+  \item $X_n \dconv X \text{ и } Y_n \pconv c
+    \imp X_nY_n \dconv cX$
+  \item В общем случае: $X_n \dconv X \text{ и } Y_n \dconv Y
+    \nimp X_n + Y_n \dconv X + Y$
+\end{itemize}
+
+\subsection{Закон больших чисел (ЗБЧ, LLN)}
+
+Пусть $\{X_1,\ldots,X_n\}$ — последовательность \iid \rv, $\E{X_1}=\mu$.
+
+Слабый закон больших чисел (WLLN)
+\[\samplemean \pconv \mu \qquad n\to\infty\]
+
+Сильный закон больших чисел (SLLN)
+\[\samplemean \asconv \mu \qquad n\to\infty\]
+
+\subsection{Центральная предельная теорема (ЦПТ)}
+
+Пусть $\{X_1,\ldots,X_n\}$ — последовательность \iid \rv, $\E{X_1}=\mu$, и
+$\V{X_1} = \sigma^2$.\\
+
+\[ Z_n
+  := \displaystyle\frac{\samplemean-\mu}{\sqrt{\V{\samplemean}}}
+  = \displaystyle\frac{\sqrt{n}(\samplemean - \mu)}{\sigma}
+  \dconv Z \qquad \text{где } Z\dist \norm[0,1]\]
+\[\lim_{n\to\infty} \Pr{Z_n \le z} = \Phi(z) \qquad z \in \mathbb R\]
+
+Обозначения ЦПТ
+\begin{align*}
+Z_n &\approx \norm[0,1] \\
+\samplemean &\approx \norm[\mu,\frac{\sigma^2}{n}] \\
+\samplemean - \mu &\approx \norm[0,\frac{\sigma^2}{n}] \\
+\sqrt{n}(\samplemean - \mu) &\approx \norm[0,\sigma^2] \\
+\frac{\sqrt{n}(\samplemean - \mu)}{\sigma} &\approx \norm[0,1] \\
+\end{align*}
+
+Поправка на непрерывность
+\[\Pr{\samplemean \le x} \approx
+  \Phi\left(\displaystyle\frac{x+\frac{1}{2}-\mu}{\sigma/\sqrt{n}}\right)\]
+\[\Pr{\samplemean \ge x} \approx
+  1-\Phi\left(\displaystyle\frac{x-\frac{1}{2}-\mu}{\sigma/\sqrt{n}}\right)\]
+
+Дельта-метод
+\[Y_n \approx \norm[\mu,\frac{\sigma^2}{n}] \imp
+\transform(Y_n) \approx
+\norm[\transform(\mu),
+  \left(\transform'(\mu)\right)^2\frac{\sigma^2}{n}]\]
+
+\section{Статистический вывод}
+
+Пусть $X_1,\cdots,X_n \distiid F$, если не указано иное.
+
+\subsection{Точечное оценивание}
+
+\begin{itemize}
+  \item Точечная оценка $\that_n$ параметра $\theta$ — это \rv:
+    $\that_n = g(X_1,\dots,X_n)$
+  \item Смещение (Bias): $\bias(\that_n) = \E{\that_n}-\theta$
+  \item Состоятельность: $\that_n \pconv \theta$
+  \item Выборочное распределение: $F(\that_n)$
+  \item Стандартная ошибка (SE): $\se(\that_n) = \sqrt{\V{\that_n}}$
+  \item Среднеквадратичная ошибка (MSE):\\
+    $\mse = \E{(\that_n-\theta)^2}
+    = \bias(\that_n)^2 + \V{\that_n}$
+  \item $\limn \bias(\that_n) = 0 \wedge \limn\se(\that_n) = 0
+    \imp \that_n$ состоятельна
+  \item Асимптотическая нормальность:
+    $\displaystyle\frac{\that_n-\theta}{\se} \dconv \norm[0,1]$
+  \item \textsc{Теорема Слуцкого} часто позволяет заменить $\se(\that_n)$ на некоторую
+    (слабо) состоятельную оценку $\shat_n$.
+\end{itemize}
+
+\subsection{Доверительный интервал на основе нормального приближения}
+
+Пусть $\that_n \approx \norm[\theta,\sehat^2]$.
+Положим $\zat = \Phi^{-1}(1-(\alpha/2))$,
+то есть $\Pr{Z > \zat} = \alpha/2$ и $\Pr{-\zat < Z < \zat} = 1-\alpha$,
+где $Z\dist\norm[0,1]$.
+Тогда \[C_n = \that_n \pm \zat\sehat\]
+
+\subsection{Эмпирическое распределение}
+
+Эмпирическая функция распределения (ЭФР, ECDF)
+\[\Fnhat(x) = \displaystyle\frac{\sumin I(X_i \le x)}{n}\]
+\[I(X_i \le x) = \begin{cases}
+  1 & X_i \le x \\
+  0 & X_i > x
+\end{cases}\]
+
+Свойства (для любого фиксированного $x$)
+\begin{itemize}
+  \item $\E{\Fnhat} = F(x)$
+  \item $\V{\Fnhat} = \displaystyle\frac{F(x)(1-F(x))}{n}$
+  \item $\mse = \displaystyle\frac{F(x)(1-F(x))}{n} \dconv 0$
+  \item $\Fnhat \pconv F(x)$
+\end{itemize}
+
+Неравенство \textsc{Дворецкого—Кифера—Вольфовица} (DKW) ($X_1,\dots,X_n\dist F$)
+\[\Pr{\sup_x\left|F(x)-\Fnhat(x)\right| > \varepsilon} =
+  2e^{-2n\varepsilon^2}\]
+
+Непараметричная доверительная полоса уровня $1-\alpha$ для $F$
+\begin{align*}
+  L(x) &= \max\{\Fnhat-\epsilon_n, 0\} \\
+  U(x) &= \min\{\Fnhat+\epsilon_n, 1\} \\
+  \epsilon &=
+    \sqrt{\displaystyle\frac{1}{2n}\log\left( \frac{2}{\alpha} \right)} \\
+\end{align*}
+\[\Pr{L(x) \le F(x) \le U(x) \;\forall x} \ge 1-\alpha\]
+
+\subsection{Статистические функционалы}
+
+\begin{itemize}
+  \item Статистический функционал: $T(F)$
+  \item Подстановочная оценка $\theta = (F)$: $\that_n = T(\Fnhat)$
+  \item Линейный функционал: $T(F) = \int \transform(x)\dfx$
+  \item Подстановочная оценка линейного функционала: \\
+    \[T(\Fnhat)
+      = \displaystyle\int \transform(x)\dfhatx
+      = \frac{1}{n}\sumin \transform(X_i)\]
+  \item Часто: $T(\Fnhat) \approx \norm[T(F),\sehat^2]$ \imp
+    $T(\Fnhat) \pm \zat\sehat$
+  \item Квантиль уровня $p$: $F^{-1}(p) = \inf\{x:F(x) \ge p\}$
+  \item $\mhat = \samplemean$
+  \item $\shat^2 = \displaystyle\frac{1}{n-1}\sumin
+    (X_i-\samplemean)^2$
+  \item  $\khat =
+    \displaystyle\frac{\frac{1}{n}\sumin(X_i-\mhat)^3}{\shat^3}$
+  \item $\rhohat = \displaystyle\frac{\sumin(X_i-\samplemean)(Y_i-\bar{Y}_n)}%
+    {\sqrt{\sumin(X_i-\samplemean)^2}\sqrt{\sumin(Y_i-\bar{Y}_n)^2}}$
+\end{itemize}
+
+\section{Параметрический вывод}
+
+Пусть $\mathfrak{F} = \bigl\{ f(x;\theta) : \theta\in\Theta \bigr\}$ —
+параметрическая модель с пространством параметров $\Theta \subset \R^k$ и параметром
+$\theta = (\theta_1,\dots,\theta_k)$.
+
+\subsection{Метод моментов}
+
+Момент порядка $j$
+\[\alpha_j(\theta) = \E{X^j} = \displaystyle\int x^j \dfx\]
+
+Выборочный момент порядка $j$
+\[\ahat_j = \displaystyle\frac{1}{n}\sumin X_i^j\]
+
+Оценка методом моментов (MoM)
+\begin{align*}
+  \alpha_1(\theta) &= \ahat_1 \\
+  \alpha_2(\theta) &= \ahat_2 \\
+  \vdots &= \vdots \\
+  \alpha_k(\theta) &= \ahat_k
+\end{align*}
+
+\begin{titemize}{Свойства оценки методом моментов}
+  \item $\that_n$ существует с вероятностью, стремящейся к 1
+  \item Состоятельность: $\that_n \pconv \theta$
+  \item Асимптотическая нормальность:
+    \[\sqrt{n}(\that-\theta) \dconv \norm[0,\Sigma]\]
+    где $\Sigma = g\E{YY^T}g^T$, $Y = (X,X^2,\dots,X^k)^T$,\\
+    $g = (g_1,\dots,g_k)$ и
+    $g_j = \frac{\partial}{\partial\theta}\alpha_j^{-1}(\theta)$
+\end{titemize}
+
+\subsection{Метод максимального правдоподобия}
+
+Функция правдоподобия: $\Lln : \Theta \to [0,\infty)$
+  \[\Lln(\theta) = \displaystyle\prodin f(X_i;\theta)\] \\
+Логарифм функции правдоподобия
+  \[\lln(\theta) = \log \Lln(\theta) = \sumin \log f(X_i;\theta)\]
+Оценка максимального правдоподобия (\mle)
+\[\Lln(\that_n) = \sup_\theta \Lln(\theta)\]
+
+Скор-функция
+\[s(X;\theta) = \frac{\partial}{\partial\theta}\log f(X;\theta)\]
+
+Информация Фишера
+\[I(\theta) = \V[\theta]{s(X;\theta)}\]
+\[I_n(\theta) = nI(\theta)\]
+Информация Фишера (экспоненциальное семейство)
+\[I(\theta) = \E[\theta]{-\frac{\partial}{\partial\theta} s(X;\theta)}\]
+Наблюдаемая информация Фишера
+\[I_n^{obs}(\theta)
+  = -\frac{\partial^2}{\partial\theta^2} \sumin\log f(X_i;\theta)\]
+
+Свойства оценки \mle
+\begin{itemize}
+  \item Состоятельность: $\that_n \pconv \theta$
+  \item Эквивариантность:
+    $\that_n$ — оценка \mle
+    \imp $\transform(\that_n)$ — оценка \mle для $\transform(\theta)$
+  \item Асимптотическая оптимальность (или эффективность), то есть наименьшая дисперсия
+    при больших объёмах выборки. Если $\ttil_n$ — любая другая оценка, то
+    асимптотическая относительная эффективность равна:
+    \begin{enumerate}
+      \item $\se \approx \sqrt{1/I_n(\theta)}$
+        \[\frac{(\that_n - \theta)}{\se} \dconv \norm[0,1]\]
+      \item $\sehat \approx \sqrt{1/I_n(\that_n)}$
+        \[\frac{(\that_n - \theta)}{\sehat} \dconv \norm[0,1]\]
+    \end{enumerate}
+  \item Асимптотическая оптимальность
+    \[\are(\ttil_n, \that_n)
+      = \frac{\V{\that_n}}{\V{\ttil_n}}
+      \le 1\]
+  \item Приближённо является байесовской оценкой
+\end{itemize}
+
+\subsubsection{Дельта-метод}
+Пусть $\tau=\transform(\that)$,
+где \transform дифференцируема и $\transform'(\theta) \neq 0$:
+\[\frac{(\widehat{\tau}_n-\tau)}{\sehat(\widehat{\tau})} \dconv \norm[0,1]\]
+где $\widehat{\tau} = \transform(\that)$
+является оценкой \mle параметра $\tau$, а
+\[\sehat = \left|\transform'(\that)\right|\sehat(\that_n)\]
+
+\subsection{Многопараметрические модели}
+
+Пусть $\theta=(\theta_1,\dots,\theta_k)$,
+а $\that= (\that_1,\dots,\that_k)$ — оценка \mle.
+
+\[H_{jj} = \frac{\partial^2 \lln}{\partial\theta^2} \qquad
+H_{jk} = \frac{\partial^2 \lln}{\partial\theta_j\partial\theta_k} \qquad\]
+
+Матрица информации Фишера
+\[I_n(\theta) = -\begin{bmatrix}
+  \E[\theta]{H_{11}} & \cdots & \E[\theta]{H_{1k}} \\
+  \vdots & \ddots & \vdots \\
+  \E[\theta]{H_{k1}} & \cdots & \E[\theta]{H_{kk}}
+\end{bmatrix}\]
+
+При выполнении соответствующих условий регулярности
+\[(\that-\theta) \approx \norm[0,J_n]\]
+где $J_n(\theta) = I_n^{-1}$.
+Кроме того, если $\that_j$ — $j$-я компонента вектора параметров $\theta$, то
+\[\frac{(\that_j-\theta_j)}{\sehat_j} \dconv \norm[0,1]\] где $\sehat_j^2 =
+J_n(j,j)$ и $\cov{\that_j,\that_k} = J_n(j,k)$
+
+\subsubsection{Многопараметрический дельта-метод}
+
+Пусть $\tau = \transform(\theta_1,\dots,\theta_k)$,
+а градиент \transform равен
+\[\nabla\transform = \begin{pmatrix}
+  \displaystyle\frac{\partial\transform}{\partial\theta_1} \\
+  \vdots \\
+  \displaystyle\frac{\partial\transform}{\partial\theta_k} \\
+\end{pmatrix}\]
+Предположим, что $\bigl.\nabla\transform\bigr|_{\theta=\that} \neq 0$ и
+$\widehat{\tau} = \transform(\that)$. Тогда
+\[\frac{(\widehat{\tau}-\tau)}{\sehat(\widehat{\tau})} \dconv \norm[0,1]\]
+где
+\[\sehat(\widehat{\tau}) = \sqrt{\left( \widehat{\nabla}\transform \right)^T
+\widehat{J}_n\left( \widehat{\nabla}\transform \right)}\]
+и $\widehat{J}_n = J_n(\that)$, а $\widehat{\nabla}\transform =
+\bigl.\nabla\transform\bigr|_{\theta=\that}$.
+
+\subsection{Параметрический бутстрэп}
+
+Выборку генерируют из $f(x;\that_n)$, а не из $\Fnhat$, где $\that_n$ может быть
+оценкой \mle или оценкой методом моментов.
+
+\section{Проверка статистических гипотез}
+
+\[H_0:\theta\in\Theta_0 \qquad\text{против}\qquad H_1:\theta\in\Theta_1\]
+
+Определения
+\begin{itemize}
+  \item Нулевая гипотеза $H_0$
+  \item Альтернативная гипотеза $H_1$
+  \item Простая гипотеза $\theta = \theta_0$
+  \item Составная гипотеза $\theta > \theta_0$ или $\theta < \theta_0$
+  \item Двусторонний критерий:
+    $H_0:\theta=\theta_0 \quad\text{против}\quad H_1:\theta\neq\theta_0$
+  \item Односторонний критерий:
+    $H_0:\theta\le\theta_0 \quad\text{против}\quad H_1:\theta>\theta_0$
+%  \[H_0:\theta\ge\theta_0 \qquad\text{против}\qquad H_1:\theta<\theta_0\]
+  \item Критическое значение $c$
+  \item Статистика критерия $T$
+  \item Область отвержения $R = \left\{ x: T(x) > c \right\}$
+  \item Функция мощности $\beta(\theta) = \Pr{X \in R}$
+  \item Мощность критерия: $1 - \Pr{\text{ошибка второго рода}} = 1-\beta
+    = \displaystyle\inf_{\theta \in \Theta_1} \beta(\theta)$
+  \item Размер критерия: $\alpha = \Pr{\text{ошибка первого рода}}
+    = \displaystyle\sup_{\theta\in\Theta_0}\beta(\theta)$
+\end{itemize}
+
+\centering
+\begin{tabular}{l|cc}
+  & \textbf{Не отвергать} $H_0$ & \textbf{Отвергнуть} $H_0$ \\
+  \hline
+  $H_0$ верна & $\checkmark$ & Ошибка первого рода ($\alpha$)\\
+  $H_1$ верна & Ошибка второго рода ($\beta$) &
+  $\checkmark$ (мощность) \\
+\end{tabular}
+
+\raggedright
+p-значение
+\begin{itemize}
+  \item p-значение $= \sup_{\theta\in\Theta_0} \Pr[\theta]{T(X) \ge T(x)}
+                      = \inf\bigl\{ \alpha: T(x) \in R_\alpha \bigr\}$
+  \item p-значение $= \sup_{\theta\in\Theta_0}
+    \underbrace{\Pr[\theta]{T(X^\star) \ge T(X)}}_{1-F_\theta(T(X))
+          \quad \text{поскольку } T(X^\star) \dist F_\theta}
+                      = \inf\bigl\{ \alpha: T(X) \in R_\alpha \bigr\}$
+\end{itemize}
+
+\centering
+\begin{tabular}{ll}
+  \textbf{p-значение} & \textbf{Сила свидетельств} \\
+  \hline
+  $< 0.01$      & очень сильное свидетельство против $H_0$ \\
+  $0.01 - 0.05$ & сильное свидетельство против $H_0$ \\
+  $0.05 - 0.1$  & слабое свидетельство против $H_0$ \\
+  $> 0.1$       & мало свидетельств против $H_0$ или они отсутствуют \\
+\end{tabular}
+
+\raggedright
+Критерий Вальда
+\begin{itemize}
+  \item Двусторонний критерий
+  \item Отвергнуть $H_0$, если $|W| > \zat$, где
+    $W = \displaystyle\frac{\that - \theta_0}{\sehat}$
+  \item $\Pr{|W| > \zat} \conv \alpha$
+  \item p-значение $= \Pr[\theta_0]{|W| > |w|}
+                 \approx \Pr{|Z| > |w|}
+                 = 2\Phi(-|w|)$
+\end{itemize}
+
+\Needspace{5\baselineskip}
+Критерий отношения правдоподобия
+\begin{itemize}
+ \item $T(X) = \displaystyle\frac{\sup_{\theta\in\Theta}\Lln(\theta)}%
+                                 {\sup_{\theta\in\Theta_0}\Lln(\theta)}
+             = \frac{\Lln(\that_n)}{\Lln(\that_{n,0})}$
+ \item $\lambda(X) = 2\log T(X) \dconv \chi_{r-q}^2$
+   где $\displaystyle\sum_{i=1}^k Z_i^2 \dist \chi_k^2$ и
+    $Z_1,\dots,Z_k \distiid \norm[0,1]$
+  \item p-значение $= \Pr[\theta_0]{\lambda(X) > \lambda(x)}
+                 \approx \Pr{\chi_{r-q}^2 > \lambda(x)}$
+\end{itemize}
+
+\begin{titemize}{Мультиномиальный критерий отношения правдоподобия}
+  \item Оценка \mle:
+    $\phat_n = \displaystyle \left(\frac{X_1}{n},\dots,\frac{X_k}{n}\right)$
+ \item $T(X) = \displaystyle \frac{\Lln(\phat_n)}{\Lln(p_0)}
+   = \prod_{j=1}^k \left( \frac{\phat_j}{p_{0j}} \right)^{X_j}$
+ \item $\lambda(X) = \displaystyle 2\sum_{j=1}^k X_j \log
+    \left( \frac{\phat_j}{p_{0j}} \right) \dconv \chi_{k-1}^2$
+ \item Критерий отношения правдоподобия приблизительного уровня $\alpha$ отвергает $H_0$,
+  когда $\lambda(X) \ge \chi_{k-1,\alpha}^2$
+\end{titemize}
+
+Критерий хи-квадрат Пирсона
+\begin{itemize}
+  \item $T = \displaystyle \sum_{j=1}^k \frac{(X_j-\E{X_j})^2}{\E{X_j}}$
+    где при $H_0$ имеем $\E{X_j} = np_{0j}$
+  \item $T \dconv \chi_{k-1}^2$
+  \item p-значение $= \Pr{\chi_{k-1}^2 > T(x)}$
+  \item Быстрее $\dconv X_{k-1}^2$, чем критерий отношения правдоподобия,
+    поэтому он предпочтителен при малом $n$
+\end{itemize}
+
+Проверка независимости
+\begin{itemize}
+  \item $I$ строк, $J$ столбцов,
+    $\mathbf{X}$ — мультиномиальная выборка объёма $n=I*J$
+  \item Оценки \mle без ограничений: $\phat_{ij} = \frac{X_{ij}}{n}$
+  \item Оценки \mle при $H_0$:
+    $\phat_{0ij} = \phat_{i\cdot}\phat_{\cdot j}
+    = \frac{X_{i\cdot}}{n} \frac{X_{\cdot j}}{n}$
+  \item Критерий отношения правдоподобия: $\lambda = 2\sum_{i=1}^I\sum_{j=1}^J X_{ij}
+    \log\left( \frac{nX_{ij}}{X_{i\cdot}X_{\cdot j}}\right)$
+  \item Критерий хи-квадрат Пирсона: $T = \sum_{i=1}^I\sum_{j=1}^J
+    \frac{(X_{ij}-\E{X_{ij}})^2}{\E{X_{ij}}}$
+  \item Критерии отношения правдоподобия и Пирсона $\dconv \chisq{\nu}$,
+    где $\nu=(I-1)(J-1)$
+\end{itemize}
+
+\section{Экспоненциальное семейство}
+
+Скалярный параметр
+\begin{align*}
+f_X(x \giv \theta)
+&= h(x) \Exp{\eta(\theta)T(x) - A(\theta)} \\
+&= h(x) g(\theta) \Exp{\eta(\theta)T(x)}
+\end{align*}
+
+Векторный параметр
+\begin{align*}
+f_X(x \giv \theta)
+&= h(x) \Exp{\sum_{i=1}^s\eta_i(\theta)T_i(x) - A(\theta)} \\
+&= h(x) \Exp{\eta(\theta)\cdot T(x) - A(\theta)} \\
+&= h(x) g(\theta)\Exp{\eta(\theta)\cdot T(x)}
+\end{align*}
+
+Естественная форма
+\begin{align*}
+f_X(x \giv \eta)
+&= h(x) \Exp{\eta\cdot \mathbf{T}(x) - A(\eta)} \\
+&= h(x) g(\eta) \Exp{\eta\cdot \mathbf{T}(x)} \\
+&= h(x) g(\eta) \Exp{\eta^T \mathbf{T}(x)}
+\end{align*}
+
+\section{Байесовский вывод}
+
+\textsc{Теорема Байеса}
+\[f(\theta\giv x)
+= \frac{f(x\giv\theta)f(\theta)}{f(x^n)}
+= \frac{f(x\giv\theta)f(\theta)}
+       {\int f(x\giv\theta)f(\theta)\,d\theta} \propto \Lln(\theta)f(\theta)\]
+
+Определения
+\begin{itemize}
+  \item $X^n = (X_1,\ldots,X_n)$
+  \item $x^n = (x_1,\ldots,x_n)$
+  \item Плотность априорного распределения $f(\theta)$
+  \item Функция правдоподобия $f(x^n \giv \theta)$: совместная плотность данных\\
+    В частности, $X^n$ \iid \imp $f(x^n\giv\theta) =
+    \displaystyle\prodin f(x_i\giv\theta) = \Lln(\theta)$
+  \item Плотность апостериорного распределения $f(\theta\giv x^n)$
+  \item Нормирующая константа $c_n = f(x^n)
+    = \int f(x\giv\theta)f(\theta)\,d\theta$
+  \item Ядро: часть плотности, зависящая от $\theta$
+  \item Апостериорное среднее $\bar\theta_n
+    = \int\theta f(\theta\giv x^n)\,d\theta
+    = \frac{\int\theta\Lln(\theta)f(\theta)d\theta}
+           {\int\Lln(\theta)f(\theta)\,d\theta}$
+\end{itemize}
+
+\subsection{Апостериорные интервалы}
+
+Апостериорный интервал
+\[\Pr{\theta\in (a,b)\giv x^n}
+= \int_{a}^{b} f(\theta\giv x^n)\,d\theta
+= 1-\alpha\]
+
+Равнохвостовой апостериорный интервал
+\[\int_{-\infty}^{a} f(\theta\giv x^n)\,d\theta
+= \int_{b}^{\infty} f(\theta\giv x^n)\,d\theta = \alpha/2\]
+
+Область наибольшей апостериорной плотности (HPD) $R_n$
+\begin{enumerate}
+  \item $\Pr{\theta\in R_n} = 1-\alpha$
+  \item $R_n = \left\{ \theta: f(\theta\giv x^n) > k \right\}$ для некоторого $k$
+\end{enumerate}
+$R_n$ одномодальна \imp $R_n$ является интервалом
+
+\subsection{Функция параметров}
+Пусть $\tau = \transform(\theta)$ и $A =
+\left\{ \theta:\transform(\theta) \le \tau \right\}$.
+
+Апостериорная функция распределения для $\tau$
+\[H(r\giv x^n)
+= \Pr{\transform(\theta) \le \tau\giv x^n}
+= \int_A f(\theta \giv x^n)\,d\theta\]
+Плотность апостериорного распределения
+\[h(\tau\giv x^n) = H'(\tau\giv x^n)\]
+Байесовский дельта-метод
+\[\tau\giv X^n \approx \norm[\transform(\that),
+\sehat\left|\transform'(\that)\right|]\]
+
+\subsection{Априорные распределения}
+
+Выбор априорного распределения
+\begin{itemize}
+  \item Субъективный байесовский подход: априорное распределение должно
+    по возможности учитывать имеющуюся у исследователя информацию
+  \item Объективный байесовский подход: априорное распределение должно содержать
+    как можно меньше дополнительной информации (\emph{неинформативное}
+    априорное распределение)
+  \item Робастный байесовский подход: рассматривайте разные априорные
+    распределения и оценивайте \emph{чувствительность} выводов к их выбору
+\end{itemize}
+
+Типы априорных распределений
+\begin{itemize}
+  \item Плоское: $f(\theta) \propto \text{константа}$
+  \item Собственное априорное распределение: $\int_{-\infty}^{\infty} f(\theta)\,d\theta = 1$
+  \item Несобственное априорное распределение: $\int_{-\infty}^{\infty} f(\theta)\,d\theta = \infty$
+  \item Априорное распределение \textsc{Джеффриса} (инвариантное относительно преобразований):
+    \[f(\theta) \propto \sqrt{I(\theta)} \qquad
+    f(\theta) \propto \sqrt{\det(I(\theta))}\]
+  \item Сопряжённое: $f(\theta)$ и $f(\theta\giv x^n)$
+    принадлежат одному параметрическому семейству
+\end{itemize}
+
+\subsubsection{Сопряжённые априорные распределения}
+
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{|l|p{.23\columnwidth}|p{.45\columnwidth}|}
+  \hline
+  \multicolumn{3}{|c|}{Непрерывное правдоподобие (индекс $c$ обозначает константу)}\\
+  \hline && \\[-2ex]
+  Функция правдоподобия & Сопряжённое априорное распределение &
+    \text{Апостериорные гиперпараметры} \\[1ex]
+
+  \hline && \\[-2ex]
+
+  $\unif[0,\theta]$ & Парето($x_m,k$) &
+  $\displaystyle\max\left\{ x_{(n)}, x_m \right\}, k+n$ \\
+
+  $\ex[\lambda]$ & $\gam[\alpha,\beta]$ &
+  $\alpha + n, \beta + \displaystyle\sumin x_i$\\[3ex]
+
+  $\norm[\mu,\sigma_c^2]$ & $\norm[\mu_0,\sigma_0^2]$ &
+  $\displaystyle
+  \left(\frac{\mu_0}{\sigma_0^2} + \frac{\sumin x_i}{\sigma_c^2} \right) /
+  \left( \frac{1}{\sigma_0^2} + \frac{n}{\sigma_c^2} \right)$,
+  $\displaystyle\left(\frac{1}{\sigma_0^2} + \frac{n}{\sigma_c^2}\right)^{-1}$
+  \\[2ex]
+
+  $\norm[\mu_c,\sigma^2]$ & Масштабированное обратное распределение хи-квадрат($\nu,\sigma_0^2$) &
+  $\nu + n$, $\displaystyle \frac{\nu\sigma_0^2 + \sumin(x_i-\mu)^2}{\nu + n}$
+  \\[4ex]
+
+  $\norm[\mu,\sigma^2]$ &
+  Нормальное масштабированное обратное гамма-распределение($\lambda,\nu,\alpha,\beta$) &
+  $\displaystyle\frac{\nu\lambda+n\xbar}{\nu+n}$, \qquad $\nu+n$, \qquad
+  $\displaystyle \alpha + \frac{n}{2}$, \qquad
+  $\displaystyle \beta + \frac{1}{2}\sumin(x_i-\xbar)^2 +
+  \frac{\gamma(\xbar-\lambda)^2}{2(n+\gamma)}$
+  \\[4ex]
+
+  MVN($\mu,\Sigma_c$) & MVN($\mu_0,\Sigma_0$) &
+  $\displaystyle\left( \Sigma_0^{-1}+ n\Sigma_c^{-1} \right)^{-1}
+  \left( \Sigma_0^{-1}\mu_0 + n\Sigma^{-1} \xbar \right)$,
+  $\displaystyle\left( \Sigma_0^{-1} + n \Sigma_c^{-1} \right)^{-1}$ \\[1ex]
+
+  MVN($\mu_c,\Sigma$) & Обратное распределение Уишарта($\kappa,\Psi$) &
+  $\displaystyle n + \kappa, \Psi + \sumin(x_i-\mu_c)(x_i-\mu_c)^T$\\
+
+  Парето($x_{m_c}, k$) & $\gam[\alpha,\beta]$ &
+  $\displaystyle\alpha+n, \beta + \sumin \log\frac{x_i}{x_{m_c}}$ \\
+
+  Парето($x_m, k_c$) & Парето($x_0, k_0$) &
+  $\displaystyle x_0, k_0 - kn$ где $k_0 > kn$ \\
+
+  $\gam[\alpha_c,\beta]$ & $\gam[\alpha_0,\beta_0]$ &
+  $\displaystyle \alpha_0 + n\alpha_c, \beta_0 + \sumin x_i$ \\[3ex]
+
+  \hline
+\end{tabular}}
+
+\vfill~
+\columnbreak
+
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{*3{|>{\begin{math}\displaystyle}l<{\end{math}}}|}
+  \hline
+  \multicolumn{3}{|c|}{Дискретное правдоподобие}\\
+  \hline && \\[-2ex]
+  \text{Функция правдоподобия} & \text{Сопряжённое априорное распределение} &
+    \text{Апостериорные гиперпараметры} \\[1ex]
+
+  \hline && \\[-2ex]
+
+  \bern[p] & \bet[\alpha,\beta] &
+  \alpha + \sumin x_i, \beta + n - \sumin x_i \\
+
+  \bin[p] & \bet[\alpha,\beta] &
+  \alpha + \sumin x_i, \beta + \sumin N_i - \sumin x_i \\
+
+  \nbin[p] & \bet[\alpha,\beta] & \alpha + rn, \beta + \sumin x_i \\
+
+  \pois[\lambda] & \gam[\alpha,\beta] & \alpha + \sumin x_i, \beta + n \\
+
+  \text{Мультиномиальное распределение}(p) & \dir[\alpha] & \alpha + \sumin x^{(i)} \\
+
+  \geo[p] & \bet[\alpha,\beta] & \alpha + n, \beta + \sumin x_i \\[3ex]
+
+  \hline
+\end{tabular}}
+
+\subsection{Байесовская проверка гипотез}
+Если $H_0:\theta \in \Theta_0$:
+\begin{align*}
+  \text{Априорная вероятность } \Pr{H_0}
+    &= \int_{\Theta_0} f(\theta)\,d\theta\\
+  \text{Апостериорная вероятность } \Pr{H_0\giv x^n}
+    &= \int_{\Theta_0} f(\theta\giv x^n)\,d\theta\\
+\end{align*}
+
+Пусть $H_0{\ldots}H_{k-1}$ — $k$ гипотез.
+Предположим, что $\theta \dist f(\theta\giv H_k)$,
+\[\Pr{H_k\giv x^n}
+= \frac{f(x^n\giv H_k)\Pr{H_k}}{\sum_{k=1}^K f(x^n\giv H_k)\Pr{H_k}},\]
+
+Маргинальное правдоподобие
+\[f(x^n\giv H_i)
+= \int_\Theta f(x^n\giv \theta,H_i)f(\theta\giv H_i) \,d\theta\]
+
+Апостериорные шансы ($H_i$ относительно $H_j$)
+\[\frac{\Pr{H_i\giv x^n}}{\Pr{H_j\giv x^n}} \quad
+= \underbrace{\frac{f(x^n\giv H_i)}{f(x^n\giv H_j)}}%
+  _{\text{фактор Байеса }BF_{ij}}
+\times \;\underbrace{\frac{\Pr{H_i}}{\Pr{H_j}}}_{\text{априорные шансы}}\]
+
+\columnbreak
+Фактор Байеса
+
+\centering
+\begin{tabular}{lll}
+  $\log_{10} BF_{10}$ & $BF_{10}$ & \textsf{сила свидетельства} \\
+  \toprule
+  $0 - 0.5$ & $1 - 1.5$   & Слабое \\
+  $0.5 - 1$ & $1.5 - 10$  & Умеренное \\
+  $1 - 2$   & $10 - 100$  & Сильное \\
+  $> 2$     & $> 100$     & Решающее \\
+\end{tabular}
+
+\vspace*{2ex}
+
+$p^* = \displaystyle\frac{\frac{p}{1-p}BF_{10}}{1+\frac{p}{1-p}BF_{10}}$
+где $p=\Pr{H_1}$ и $p^* = \Pr{H_1 \giv x^n}$
+
+\raggedright
+
+\section{Методы моделирования выборок}
+
+\subsection{Метод обратного преобразования}
+
+Постановка
+\begin{itemize}
+  \item $U \dist \unif[0,1]$
+  \item $X \dist F$
+  \item $F^{-1}(u)= \inf\{ x \mid F(x) \ge u\}$
+\end{itemize}
+
+Алгоритм
+\begin{enumerate}
+  \item Сгенерируйте $u \dist \unif[0,1]$
+  \item Вычислите $x = F^{-1}(u)$
+\end{enumerate}
+
+\subsection{Бутстрэп}
+
+Пусть $T_n = g(X_1,\dots,X_n)$ — статистика.
+\begin{enumerate}
+  \item Оцените $\V[F]{T_n}$ с помощью $\V[\Fnhat]{T_n}$.
+  \item Приблизьте $\V[\Fnhat]{T_n}$ с помощью моделирования:
+    \begin{enumerate}
+      \item Повторите следующие действия $B$ раз, чтобы получить $T_{n,1}^*,\dots,T_{n,B}^*$ —
+        выборку независимых одинаково распределённых величин (\iid) из выборочного
+        распределения, задаваемого $\Fnhat$
+        \begin{enumerate}
+          \item Равновероятно выберите $X_1^*,\dots,X_n^* \dist \Fnhat$.
+          \item Вычислите $T_n^* = g(X_1^*,\dots,X_n^*)$.
+        \end{enumerate}
+      \item Тогда
+        \[v_{boot} = \widehat{\mathbb{V}}_{\Fnhat} =
+          \displaystyle\frac{1}{B} \sum_{b=1}^B
+            \left(T_{n,b}^* - \frac{1}{B} \sum_{r=1}^B T_{n,r}^* \right)^2\]
+    \end{enumerate}
+\end{enumerate}
+
+\subsubsection{Бутстрэп-доверительные интервалы}
+
+Интервал на основе нормального приближения
+\[T_n \pm \zat\sehat_{boot}\]
+
+Пивотальный интервал
+\begin{enumerate}
+  \item Параметр положения $\theta = T(F)$
+  \item Пивот $R_n = \that_n - \theta$
+  \item Пусть $H(r) = \Pr{R_n \le r}$ — \cdf случайной величины $R_n$
+  \item Пусть $R_{n,b}^* = \that_{n,b}^* - \that_n$.
+    Приблизьте $H$ с помощью бутстрэпа:
+    \[\widehat{H}(r) = \frac{1}{B}\sum_{b=1}^B I(R_{n,b}^* \le r)\]
+  \item $\theta_\beta^*$ = $\beta$-квантиль выборки
+    $(\that_{n,1}^*,\dots,\that_{n,B}^*)$
+  \item $r_\beta^*$ = β-квантиль выборки
+    $(R_{n,1}^*,\dots,R_{n,B}^*)$, то есть
+    $r_\beta^* = \theta_\beta^* - \that_n$
+  \item Приближённый доверительный интервал уровня $1-\alpha$
+    $C_n = \left( \hat{a}, \hat{b} \right)$, где
+    \begin{align*}
+    \hat{a}
+      &=& \that_n - \widehat{H}^{-1}\left( 1-\frac{\alpha}{2} \right)
+      &=& \that_n - r_{1-\alpha/2}^*
+      &=& 2\that_n - \theta_{1-\alpha/2}^* \\
+    \hat{b}
+      &=& \that_n - \widehat{H}^{-1}\left( \frac{\alpha}{2} \right)
+      &=& \that_n - r_{\alpha/2}^*
+      &=& 2\that_n - \theta_{\alpha/2}^*
+    \end{align*}
+\end{enumerate}
+%  \[C_n = \left( 2\that_n - \that_{1-\alpha/2}^*,
+%    2\that_n + \that_{\alpha/2}^* \right)\]
+
+Процентильный интервал
+\[C_n = \left( \theta_{\alpha/2}^*, \theta_{1-\alpha/2}^* \right)\]
+
+\subsection{Метод отбраковки}
+Постановка
+\begin{itemize}
+  \item Из $g(\theta)$ легко генерировать значения
+  \item Нам нужно генерировать значения из $h(\theta)$, но это трудно
+  \item $h(\theta)$ известна с точностью до нормирующей константы:
+    $h(\theta) = \displaystyle\frac{k(\theta)}{\int k(\theta)\,d\theta}$
+  \item Условие мажорирования: можно найти $M > 0$ такое, что
+    $k(\theta) \le Mg(\theta) \quad \forall \theta$
+\end{itemize}
+
+Алгоритм
+\begin{enumerate}
+  \item Сгенерируйте кандидата $\theta^{cand} \dist g(\theta)$
+  \item Сгенерируйте $u \dist \unif[0,1]$
+  \item Примите $\theta^{cand}$, если
+    $u \le \displaystyle\frac{k(\theta^{cand})}{Mg(\theta^{cand})}$
+  \item Повторяйте, пока не будут приняты $B$ значений $\theta^{cand}$
+\end{enumerate}
+
+Пример
+\begin{itemize}
+  \item Из априорного распределения $g(\theta) = f(\theta)$ легко генерировать значения
+  \item Целевое распределение — апостериорное
+    $h(\theta) \propto k(\theta) = f(x^n\giv \theta) f(\theta)$
+  \item Условие мажорирования:
+    $f(x^n\giv\theta) \le f(x^n\giv\that_n) = \Lln(\that_n)\equiv M$
+  \item Алгоритм
+    \begin{enumerate}
+      \item Сгенерируйте кандидата $\theta^{cand} \dist f(\theta)$
+      \item Сгенерируйте $u \dist \unif[0,1]$
+      \item Примите $\theta^{cand}$, если
+        $u \le \displaystyle\frac{\Lln(\theta^{cand})}{\Lln(\that_n)}$
+    \end{enumerate}
+\end{itemize}
+
+\subsection{Метод важностной выборки}
+
+Генерируйте значения из вспомогательной плотности $g$ (плотности важности), а не из целевой плотности $h$.\\
+Алгоритм приближённого вычисления $\E{q(\theta) \giv x^n}$:
+\begin{enumerate}
+  \item Сгенерируйте значения из априорного распределения $\theta_1,\ldots,\theta_n \distiid f(\theta)$
+  \item $w_i = \displaystyle\frac{\Lln(\theta_i)}{\sum_{i=1}^B \Lln(\theta_i)}
+    \quad\forall i = 1,\ldots,B$
+  \item $\E{q(\theta)\giv x^n} \approx \sum_{i=1}^B q(\theta_i)w_i$
+\end{enumerate}
+
+\section{Теория принятия решений}
+
+Определения
+\begin{itemize}
+  \item Неизвестная величина, влияющая на наше решение: $\theta \in \Theta$
+  \item Правило принятия решения: здесь синоним оценки $\that$
+  \item Действие $a \in \mathcal{A}$: возможное значение правила принятия решения.
+    В задаче оценивания действием является оценка $\theta$, $\that(x)$.
+  \item Функция потерь $L$: последствия выбора действия $a$ при истинном состоянии
+    $\theta$ или расхождение между $\theta$ и $\that$,
+    $L: \Theta \times \mathcal{A} \to [-k,\infty).$
+\end{itemize}
+
+Функции потерь
+\begin{itemize}
+  \item Потери с квадратичной ошибкой: $L(\theta,a) = (\theta-a)^2$
+  \item Линейные потери: $L(\theta,a) = \begin{cases}
+      K_1(\theta-a) & a-\theta < 0 \\
+      K_2(a-\theta) & a-\theta \ge 0
+    \end{cases}$
+  \item Потери с абсолютной ошибкой: $L(\theta,a) = |\theta-a| \quad$
+    (линейные потери при $K_1=K_2$)
+  \item Потери $L_p$: $L(\theta,a) = |\theta-a|^p$
+  \item Потери 0–1: $L(\theta,a) = \begin{cases}
+      0 & a=\theta \\
+      1 & a\neq\theta \\
+    \end{cases}$
+\end{itemize}
+
+\subsection{Риск}
+
+Апостериорный риск
+\[r(\that \giv x)
+= \int L(\theta,\that(x))f(\theta\giv x)\,d\theta
+= \E[\theta|X]{L(\theta,\that(x))}\]
+
+(Частотный) риск
+\[R(\theta,\that)
+= \int L(\theta,\that(x)) f(x\giv\theta) \dx
+= \E[X|\theta]{L(\theta,\that(X))}\]
+
+Байесовский риск
+\[r(f,\that)
+= \iint L(\theta,\that(x))f(x,\theta)\dx\dtheta
+= \E[\theta,X]{L(\theta,\that(X))}\]
+\[r(f,\that)
+= \E[\theta]{\E[X|\theta]{L(\theta,\that(X)}}
+= \E[\theta]{R(\theta,\that)}\]
+\[r(f,\that)
+= \E[X]{\E[\theta|X]{L(\theta,\that(X)}}
+= \E[X]{r(\that\giv X)}\]
+
+\subsection{Допустимость оценок}
+
+\begin{itemize}
+  \item $\that'$ доминирует над $\that$, если
+    \[\forall \theta: R(\theta,\that') \le R(\theta,\that)\]
+    \[\exists \theta: R(\theta,\that') < R(\theta,\that)\]
+  \item $\that$ недопустима, если существует хотя бы одна другая оценка
+    $\that'$, доминирующая над ней. В противном случае она называется допустимой.
+\end{itemize}
+
+\subsection{Байесовское правило}
+
+Байесовское правило (или байесовская оценка)
+\begin{itemize}
+  \item $r(f,\that) = \inf_{\ttil} r(f,\ttil)$
+  \item $\that(x) = \inf r(\that\giv x) \; \forall x
+\imp r(f,\that) = \int r(\that\giv x)f(x)\,dx$
+\end{itemize}
+
+Теоремы
+\begin{itemize}
+  \item Потери с квадратичной ошибкой: апостериорное среднее
+  \item Потери с абсолютной ошибкой: апостериорная медиана
+  \item Потери 0–1: апостериорная мода
+\end{itemize}
+
+\subsection{Минимаксные правила}
+
+Максимальный риск
+\[\bar{R}(\that) = \sup_\theta R(\theta,\that) \qquad
+\bar{R}(a) = \sup_\theta R(\theta,a)\]
+
+Минимаксное правило
+\[\sup_\theta R(\theta,\that)
+= \inf_{\ttil} \bar{R}(\ttil)
+= \inf_{\ttil} \sup_\theta R(\theta,\ttil)\]
+
+\[\that = \text{байесовское правило} \; \wedge \;
+\exists c: R(\theta,\that) = c\]
+
+Наименее благоприятное априорное распределение
+\[\that^f = \text{байесовское правило} \; \wedge \;
+R(\theta,\that^f) \le r(f,\that^f) \;\forall\theta\]
+
+\section{Линейная регрессия}
+
+Определения
+\begin{itemize}
+  \item Зависимая переменная (отклик) $Y$
+  \item Ковариата $X$ (также предиктор или признак)
+\end{itemize}
+
+\subsection{Простая линейная регрессия}
+Модель
+\[Y_i = \beta_0 + \beta_1 X_i + \epsilon_i
+\qquad \E{\epsilon_i\giv X_i} = 0 ,\; \V{\epsilon_i\giv X_i} = \sigma^2\]
+
+Оценённая линия регрессии
+\[\rhat(x) = \bhat_0 + \bhat_1 x\]
+
+Предсказанные (расчётные) значения
+\[\Yhat_i = \rhat(X_i)\]
+
+Остатки
+\[\ehat_i = Y_i - \Yhat_i
+= Y_i - \left( \bhat_0 + \bhat_1 X_i \right)\]
+
+Сумма квадратов остатков (\rss)
+\[\rss(\bhat_0,\bhat_1) = \sumin \ehat_i^2\]
+
+Оценки методом наименьших квадратов
+\[\bhat^T=(\bhat_0, \bhat_1)^T: \min_{\bhat_0,\bhat_1}\rss\]
+\begin{align*}
+  \bhat_0 &= \bar Y_n - \bhat_1 \bar X_n \\
+  \bhat_1 &= \frac{\sumin(X_i-\bar X_n)(Y_i-\bar Y_n)}{\sumin(X_i - \bar X_n)^2}
+           = \frac{\sumin X_iY_i-n\Xbar\Ybar}{\sumin X_i^2 - n\Xsqbar} \\
+  \E{\bhat\giv X^n} &= \begin{pmatrix}\beta_0 \\ \beta_1\end{pmatrix} \\
+  \V{\bhat\giv X^n} &=
+  \frac{\sigma^2}{n s^2_X}
+    \begin{pmatrix}n^{-1}\sumin X_i^2 & -\Xnbar \\ -\Xnbar & 1\end{pmatrix} \\
+  \sehat(\bhat_0) &= \frac{\shat}{s_X\sqrt{n}} \sqrt{\frac{\sumin X_i^2}{n}} \\
+  \sehat(\bhat_1) &= \frac{\shat}{s_X\sqrt{n}}
+\end{align*}
+где $s_X^2 = n^{-1} \sumin(X_i-\Xnbar)^2$ и $\shat^2 =
+\frac{1}{n-2} \sumin \ehat_i^2$ (несмещённая оценка).
+
+Дополнительные свойства:
+\begin{itemize}
+  \item Состоятельность:
+    $\bhat_0 \pconv \beta_0$ и $\bhat_1 \pconv \beta_1$
+  \item Асимптотическая нормальность:
+    \[\frac{\bhat_0 - \beta_0}{\sehat(\bhat_0)} \dconv \norm[0,1]
+    \quad\text{и}\quad
+    \frac{\bhat_1 - \beta_1}{\sehat(\bhat_1)} \dconv \norm[0,1]\]
+  \item Приближённые доверительные интервалы уровня $1-\alpha$ для $\beta_0$ и $\beta_1$:
+    \[\bhat_0 \pm \zat \sehat(\bhat_0) \quad\text{и}\quad
+    \bhat_1 \pm \zat \sehat(\bhat_1)\]
+  \item Критерий Вальда для \hyp{\beta_1=0}{\beta_1\neq 0}: отвергайте
+    $H_0$, если $|W| > \zat$, где $W = \bhat_1/\sehat(\bhat_1)$.
+\end{itemize}
+
+R$^2$
+\[R^2
+= \frac{\sumin(\Yhat_i-\Ybar)^2}{\sumin(Y_i-\Ybar)^2}
+= 1 - \frac{\sumin \ehat_i^2}{\sumin(Y_i-\Ybar)^2}
+= 1 - \frac{\rss}{\tss}\]
+
+Функция правдоподобия
+\begin{align*}
+\Ll &= \prodin f(X_i,Y_i)
+= \prodin f_X(X_i) \times \prodin f_{Y|X}(Y_i \giv X_i) = \Ll_1 \times \Ll_2 \\
+\Ll_1 &= \prodin f_X(X_i) \\
+\Ll_2 &= \prodin f_{Y|X}(Y_i \giv X_i)
+\propto \sigma^{-n}
+\Exp{-\frac{1}{2\sigma^2}\sum_i\Bigl(Y_i-(\beta_0-\beta_1X_i)\Bigr)^2}
+\end{align*}
+
+При предположении нормальности оценка наименьших квадратов также является
+\mle, но оценка дисперсии методом наименьших квадратов не является \mle.
+\[\shat^2 = \frac{1}{n}\sumin \ehat_i^2\]
+
+\subsection{Предсказание}
+
+Наблюдаем значение ковариаты $X = x_*$ и хотим предсказать соответствующее значение $Y_*$.
+\begin{align*}
+\Yhat_* &= \bhat_0 + \bhat_1 x_* \\
+\V{\Yhat_*} &= \V{\bhat_0} + x_*^2 \V{\bhat_1} + 2x_* \cov{\bhat_0,\bhat_1}
+\end{align*}
+
+Предиктивный интервал
+\[\xihat_n^2
+= \shat^2\left( \frac{\sumin(X_i-X_*)^2}{n\sum_i(X_i-\Xbar)^2j}+1 \right)\]
+\[\Yhat_* \pm \zat \xihat_n\]
+
+\subsection{Множественная регрессия}
+
+\[Y = X\beta + \epsilon\]
+где
+\[X =
+\begin{pmatrix} X_{11} & \cdots & X_{1k} \\ \vdots & \ddots & \vdots \\
+  X_{n1} & \cdots & X_{nk}\end{pmatrix} \quad
+\beta = \begin{pmatrix}\beta_1 \\ \vdots \\ \beta_k\end{pmatrix} \quad
+\epsilon = \begin{pmatrix}\epsilon_1 \\ \vdots \\ \epsilon_n\end{pmatrix}\]
+
+Функция правдоподобия
+\[\Ll(\mu,\Sigma) = (2\pi\sigma^2)^{-n/2} \Exp{-\frac{1}{2\sigma^2}\rss}\]
+\[\rss = (y-X\beta)^T(y-X\beta) = \|Y-X\beta\|^2 = \sumiN(Y_i-x_i^T\beta)^2\]
+
+Если матрица $X^TX$ размера $(k \times k)$ обратима,
+\begin{align*}
+  \bhat &= (X^TX)^{-1}X^TY \\
+  \V{\bhat \giv X^n} &= \sigma^2(X^TX)^{-1} \\
+  \bhat &\approx \norm[\beta, \sigma^2(X^TX)^{-1}]
+\end{align*}
+
+Оценка функции регрессии
+\[\rhat(x) = \sumjk\bhat_j x_j\]
+
+Несмещённая оценка $\sigma^2$
+\[\shat^2 = \frac{1}{n-k} \sumin \ehat_i^2 \qquad \ehat = X\bhat-Y\]
+
+Оценки максимального правдоподобия (\mle)
+\[\mhat = \Xbar \qquad \shat^2 = \frac{n-k}{n}\sigma^2\]
+
+Доверительный интервал уровня $1-\alpha$
+\[\bhat_j \pm \zat\sehat(\bhat_j)\]
+
+\subsection{Выбор модели}
+
+Рассмотрим предсказание нового наблюдения $Y^*$ по ковариатам $X^*$; пусть $S
+\subset J$ — подмножество ковариат модели, где $|S| = k$ и $|J| = n$.
+
+Проблемы
+\begin{itemize}
+  \item Недообучение: слишком малое число ковариат приводит к большому смещению
+  \item Переобучение: слишком большое число ковариат приводит к высокой дисперсии
+\end{itemize}
+
+Процедура
+\begin{enumerate}
+  \item Присвойте каждой модели оценку
+  \item Просмотрите все модели и выберите модель с наибольшей оценкой
+\end{enumerate}
+
+Проверка гипотез
+\[\hyp{\beta_j=0}{\beta_j\neq0} \quad\forall j \in J\]
+
+Среднеквадратичная ошибка предсказания (\mspe)
+\[\mspe = \E{(\Yhat(S)-Y^*)^2}\]
+
+Риск предсказания
+\[R(S) = \sumin \mspe_i = \sumin \E{(\Yhat_i(S)-Y_i^*)^2}\]
+
+Ошибка на обучающей выборке
+\[\Rhat_{tr}(S) = \sumin(\Yhat_i(S)-Y_i)^2\]
+
+$R^2$
+\[R^2(S)
+= 1 - \frac{\rss(S)}{\tss}
+= 1 - \frac{\Rhat_{tr}(S)}{\tss}
+= 1 - \frac{\sumin(\Yhat_i(S)-\Ybar)^2}{\sumin(Y_i-\Ybar)^2}\]
+
+Ошибка на обучающей выборке является смещённой вниз оценкой риска предсказания.
+\[\E{\Rhat_{tr}(S)} < R(S)\]
+\[\bias(\Rhat_{tr}(S)) = \E{\Rhat_{tr}(S)} - R(S) = -2\sumin\cov{\Yhat_i,Y_i}\]
+
+Скорректированный коэффициент детерминации $R^2$
+\[R^2(S) = 1 - \frac{n-1}{n-k} \frac{\rss}{\tss}\]
+
+Статистика $C_p$ \textsc{Мэллоуза}
+\[\Rhat(S) = \Rhat_{tr}(S) + 2k\shat^2
+= \text{ошибка аппроксимации} + \text{штраф за сложность}\]
+
+Информационный критерий \textsc{Акаике} (AIC)
+\[AIC(S) = \lln(\bhat_S, \shat^2_S) - k\]
+
+Байесовский информационный критерий (BIC)
+\[BIC(S) = \lln(\bhat_S, \shat^2_S) - \frac{k}{2}\log n\]
+
+Проверочная и обучающая выборки
+\[\Rhat_V(S) = \sumim(\Yhat_i^*(S) - Y_i^*)^2 \quad
+m = |\{\text{проверочные данные}\}|,\,
+\text{обычно }n/4\text{ или }n/2\]
+
+Перекрёстная проверка с исключением одного наблюдения
+\[\Rhat_{CV}(S)
+= \sumin(Y_i - \Yhat_{(i)})^2
+= \sumin \left( \frac{Y_i-\Yhat_i(S)}{1-U_{ii}(S)} \right)^2\]
+\[U(S) = X_S(X_S^T X_S)^{-1} X_S \text{ (матрица проекции)}\]
+
+\section{Непараметрическое оценивание функций}
+
+\subsection{Оценивание плотности}
+
+Оценить $f(x)$, где $f(x) = \Pr{X \in A} = \int_A f(x)\dx$.\\
+
+Интегральная квадратичная ошибка (\ise)
+\[L(f, \fnhat) = \int\left(f(x) - \fnhat(x)\right)^2 \dx = J(h)+\int f^2(x)\dx\]
+
+Частотный риск
+\[R(f, \fnhat) = \E{L(f,\fnhat)} = \int b^2(x) \dx + \int v(x) \dx\]
+\begin{align*}
+  b(x) &= \E{\fnhat(x)} - f(x) \\
+  v(x) &= \V{\fnhat(x)}
+\end{align*}
+
+\subsubsection{Гистограммы}
+
+Определения
+\begin{itemize}
+  \item Число интервалов разбиения $m$
+  \item Ширина интервала $h = \frac{1}{m}$
+  \item В интервале $B_j$ находятся $\nu_j$ наблюдений
+  \item Обозначим $\phat_j = \nu_j/n$ и $p_j = \int_{B_j} f(u)\du$
+\end{itemize}
+
+Гистограммная оценка плотности
+\begin{align*}
+\fnhat(x) &= \sumjm \frac{\phat_j}{h} I(x\in B_j) \\
+\E{\fnhat(x)} &= \frac{p_j}{h} \\
+\V{\fnhat(x)} &= \frac{p_j(1-p_j)}{nh^2} \\
+R(\fnhat,f) &\approx
+\frac{h^2}{12} \int \left(f'(u)\right)^2 \du + \frac{1}{nh} \\
+h^* &= \frac{1}{n^{1/3}} \left( \frac{6}{\int\left(f'(u) \right)^2}\du
+\right)^{1/3} \\
+R^*(\fnhat,f) &\approx \frac{C}{n^{2/3}} \qquad
+C = \left(\frac{3}{4}\right)^{2/3} \left( \int\left( f'(u) \right)^2 \du
+\right)^{1/3}
+\end{align*}
+
+Оценка $\E{J(h)}$ методом перекрёстной проверки
+\[\Jhat_{CV}(h)
+= \int \fnhat^2(x) \dx - \frac{2}{n}\sumin \fhat_{(-i)}(X_i)
+= \frac{2}{(n-1)h} - \frac{n+1}{(n-1)h} \sumjm \phat_j^2\]
+
+\subsubsection{Ядерная оценка плотности (KDE)}
+
+Ядро $K$
+\begin{itemize}
+  \item $K(x) \ge 0$
+  \item $\int K(x)\dx = 1$
+  \item $\int xK(x)\dx = 0$
+  \item $\int x^2 K(x)\dx \equiv \sigma^2_K > 0$
+\end{itemize}
+
+Ядерная оценка плотности (KDE)
+\begin{align*}
+  \fnhat(x) &= \frac{1}{n} \sumin \frac{1}{h} K\left( \frac{x-X_i}{h} \right) \\
+  R(f,\fnhat) &\approx \frac{1}{4}(h\sigma_K)^4 \int (f''(x))^2\dx
+  + \frac{1}{nh} \int K^2(x)\dx \\
+  h^* &= \frac{c_1^{-2/5} c_2^{-1/5} c_3^{-1/5}}{n^{1/5}} \qquad
+  c_1=\sigma_K^2,\;c_2 = \int K^2(x)\dx,\;c_3 = \int(f''(x))^2\dx\\
+  R^*(f,\fnhat) &= \frac{c_4}{n^{4/5}} \qquad
+  c_4 = \underbrace{\frac{5}{4}(\sigma_K^2)^{2/5} \left(\int
+  K^2(x)\dx\right)^{4/5}}_{C(K)}
+  \left( \int(f'')^2\dx \right)^{1/5}
+\end{align*}
+
+Ядро \textsc{Епанечникова}
+\[K(x) = \begin{cases}
+  \frac{3}{4\sqrt{5}(1-x^2/5)} & |x| < \sqrt{5} \\ 0 & \text{иначе}
+\end{cases}\]
+
+Оценка $\E{J(h)}$ методом перекрёстной проверки
+\[\Jhat_{CV}(h)
+= \int \fnhat^2(x) \dx - \frac{2}{n}\sumin \fhat_{(-i)}(X_i)
+\approx \frac{1}{hn^2} \sumin \sumjn K^*\left( \frac{X_i-X_j}{h} \right) +
+\frac{2}{nh} K(0)\]
+\[K^*(x) = K^{(2)}(x)-2K(x) \qquad K^{(2)}(x) = \int K(x-y) K(y) \dy\]
+
+\subsection{Непараметрическая регрессия}
+
+Оценить $f(x)$, где $f(x) = \E{Y \giv X=x}$.
+Рассмотрим пары точек $(x_1,Y_1),\dots,(x_n,Y_n)$, связанные соотношениями
+\begin{align*}
+Y_i &= r(x_i) + \epsilon_i \\
+\E{\epsilon_i} &= 0 \\
+\V{\epsilon_i} &= \sigma^2
+\end{align*}
+
+Оценка методом $k$ ближайших соседей
+\[\rhat(x) = \frac{1}{k} \sum_{i:x_i \in N_k(x)} Y_i \qquad \text{где }
+N_k(x) = \{k \text{ ближайших к } x \text{ значений из } x_1,\dots,x_n\}\]
+
+Ядерная оценка \textsc{Надарая—Ватсона}
+\begin{align*}
+\rhat(x) &= \sumin w_i(x)Y_i \\
+w_i(x)
+&= \frac{K\left(\frac{x-x_i}{h}\right)}{\sumjn K\left(\frac{x-x_j}{h}\right)}
+\quad \in [0,1] \\
+R(\rhat_n,r) &\approx \frac{h^4}{4} \left( \int x^2K^2(x)\dx \right)^4
+\int \left( r''(x) + 2r'(x)\frac{f'(x)}{f(x)}\right)^2 \dx \\
+&+ \int \frac{\sigma^2 \int K^2(x) \dx}{nhf(x)}\dx \\
+h^* &\approx \frac{c_1}{n^{1/5}} \\
+R^*(\rhat_n,r) &\approx \frac{c_2}{n^{4/5}} \\
+\end{align*}
+
+Оценка $\E{J(h)}$ методом перекрёстной проверки
+\[\Jhat_{CV}(h)
+= \sumin (Y_i - \rhat_{(-i)}(x_i))^2
+= \sumin \frac{(Y_i - \rhat(x_i))^2}{\left(
+1- \frac{K(0)}{\sumjn K\left(\frac{x-x_j}{h}\right)}\right)^2}\]
+
+\subsection{Сглаживание с помощью ортогональных функций}
+
+Аппроксимация
+\[r(x) = \sum_{j=1}^\infty\beta_j\phi_j(x)
+\approx \sum_{j=1}^J \beta_j\phi_j(x)\]
+
+Многомерная регрессия
+\[Y = \Phi\beta + \eta\]
+\[\text{где}\quad \eta_i = \epsilon_i \quad\text{и}\quad \Phi
+= \begin{pmatrix}
+  \phi_0(x_1) & \cdots & \phi_J(x_1) \\
+  \vdots & \ddots & \vdots \\
+  \phi_0(x_n) & \cdots & \phi_J(x_n)
+  \end{pmatrix}\]
+
+Оценка методом наименьших квадратов
+\begin{align*}
+\bhat &= (\Phi^T\Phi)^{-1}\Phi^T Y \\
+&\approx \frac{1}{n}\Phi^T Y
+  \quad\text{(только для равноотстоящих наблюдений)}
+\end{align*}
+
+Оценка $\E{J(h)}$ методом перекрёстной проверки
+\[\Rhat_{CV}(J)
+= \sumin \left( Y_i - \sum_{j=1}^J \phi_j(x_i)\bhat_{j,(-i)} \right)^2\]
+
+\section{Случайные процессы}
+
+Случайный процесс
+\[\left\{ X_t : t \in T\right\} \qquad T=\begin{cases}\{0,\pm1,\dots\}=\Z &
+  \text{дискретное время} \\ [0,\infty) & \text{непрерывное время}\end{cases}\]
+
+\begin{itemize}
+  \item Обозначения $X_t$, $X(t)$
+  \item Пространство состояний $\mathcal{X}$
+  \item Индексное множество $T$
+\end{itemize}
+
+\subsection{Цепи Маркова}
+
+Цепь Маркова
+\[\Pr{X_n = x \giv X_0,\dots,X_{n-1}} = \Pr{X_n = x \giv X_{n-1}}
+\quad \forall n\in T, x \in \mathcal{X}\]
+
+Вероятности перехода
+\begin{align*}
+p_{ij} &\equiv \Pr{X_{n+1} = j \giv X_n = i} \\
+p_{ij}(n) &\equiv \Pr{X_{m+n} = j \giv X_m = i} \quad\text{за $n$ шагов}
+\end{align*}
+
+Матрица переходов $\mathbf{P}$ (за $n$ шагов: $\mathbf{P}_n$)
+\begin{itemize}
+  \item $(i,j)$ элемент равен $p_{ij}$
+  \item $p_{ij} > 0$
+  \item $\sum_i p_{ij} = 1$
+\end{itemize}
+
+\textsc{Чепмена—Колмогорова}
+\[p_{ij}(m+n) = \sum_k p_{ij}(m) p_{kj}(n)\]
+\[\mathbf{P}_{m+n} = \mathbf{P}_m\mathbf{P}_n\]
+\[\mathbf{P}_n = \mathbf{P} \times \cdots \times \mathbf{P} = \mathbf{P}^n\]
+
+Маргинальное распределение
+\begin{align*}
+  \mu_n &= (\mu_n(1),\dots,\mu_n(N))
+  \quad\text{где}\quad \mu_i(i)=\Pr{X_n=i} \\
+\mu_0 &\eqdef \text{начальное распределение} \\
+\mu_n &= \mu_0\mathbf{P}^n
+\end{align*}
+
+\subsection{Пуассоновские процессы}
+
+Пуассоновский процесс
+\begin{itemize}
+  \item $\left\{ X_t : t \in [0,\infty) \right\}$
+    = число событий, произошедших к моменту времени $t$ включительно
+  \item $X_0 = 0$
+  \item Независимые приращения:
+    \[\forall t_0 < \cdots < t_n:
+    X_{t_1} - X_{t_0} \ind \cdots \ind X_{t_n} - X_{t_{n-1}}\]
+  \item Функция интенсивности $\lambda(t)$
+    \begin{itemize}
+      \item $\Pr{X_{t+h}-X_t = 1} = \lambda(t) h + o(h)$
+      \item $\Pr{X_{t+h}-X_t = 2} = o(h)$
+    \end{itemize}
+  \item $X_{s+t} - X_s \dist \pois[m(s+t)-m(s)]\;$ где
+    $\;m(t)=\int_0^t\lambda(s)\ds$
+\end{itemize}
+
+Однородный пуассоновский процесс
+\[\lambda(t) \equiv \lambda \imp X_t \dist \pois[\lambda t] \qquad \lambda > 0\]
+
+Времена ожидания
+\[W_t \define \text{время наступления $t$-го события}\]
+\[W_t \dist \gam[t, \frac{1}{\lambda}]\]
+
+Межсобытийные интервалы
+\[S_t = W_{t+1} - W_t\]
+\[S_t \dist \ex[\frac{1}{\lambda}]\]
+
+\begin{center}
+  \begin{tikzpicture}[decoration={brace,amplitude=5pt}]
+    \draw[->] (0,0) -- (8,0) node[below]{$t$};
+    \foreach \i in {1,1.5,3,5,6,7}
+      \draw (\i,2pt) -- (\i,-2pt) node {};
+    \draw (3,0) node[below] {\footnotesize $W_{t-1}$};
+    \draw (5,0) node[below] {\footnotesize $W_{t}$};
+    \draw[decorate,yshift=5pt] (3,0) -- (5,0)
+      node[midway,above=3pt] {\footnotesize $S_t$};
+  \end{tikzpicture}
+\end{center}
+
+\section{Временные ряды}
+
+Функция математического ожидания
+\[\mu_{x_t} = \E{x_t} = \int_{-\infty}^\infty x f_t(x) \dx\]
+
+Автоковариационная функция
+\[\gamma_x(s,t) = \E{(x_s-\mu_s)(x_t-\mu_t)} = \E{x_sx_t} - \mu_s\mu_t\]
+\[\gamma_x(t,t) = \E{(x_t-\mu_t)^2} = \V{x_t}\]
+
+Автокорреляционная функция (ACF)
+\[\rho(s,t) = \frac{\cov{x_s,x_t}}{\sqrt{\V{x_s}\V{x_t}}}
+            = \frac{\gamma(s,t)}{\sqrt{\gamma(s,s)\gamma(t,t)}}\]
+
+Взаимная ковариационная функция (CCV)
+\[\gamma_{xy}(s,t) = \E{(x_s-\mu_{x_s})(y_t-\mu_{y_t})}\]
+
+Взаимная корреляционная функция (CCF)
+\[\rho_{xy}(s,t) = \frac{\gamma_{xy}(s,t)}{\sqrt{\gamma_x(s,s)\gamma_y(t,t)}}\]
+
+Оператор обратного сдвига
+\[B^k(x_t) = x_{t-k}\]
+
+Оператор разностей
+\[\nabla^d = (1-B)^d\]
+
+Белый шум
+\begin{itemize}
+  \item $w_t \dist wn(0, \sigma_w^2)$
+  \item В гауссовском случае: $w_t \distiid \norm[0, \sigma_w^2]$
+  \item $\E{w_t} = 0 \quad t\in T$
+  \item $\V{w_t} = \sigma^2 \quad t\in T$
+  \item $\gamma_w(s,t) = 0 \quad s \neq t \;\wedge\; s,t\in T$
+\end{itemize}
+
+%Auto regression
+%\[x_t = \sum_{i=1}^p \phi_i x_{t-i} + w_t\]
+
+Случайное блуждание
+\begin{itemize}
+  \item Дрейф $\delta$
+  \item $x_t = \delta t + \sum_{j=1}^t w_j$
+  \item $\E{x_t} = \delta t$
+\end{itemize}
+
+Симметричное скользящее среднее
+\[m_t = \sum_{j=-k}^k a_j x_{t-j}
+\qquad \text{где } a_j=a_{-j}\ge0 \text{ и } \sum_{j=-k}^k a_j = 1\]
+
+\subsection{Стационарные временные ряды}
+
+Строго стационарный процесс
+\[\Pr{x_{t_1} \le c_1, \dots, x_{t_k} \le c_k} =
+  \Pr{x_{t_1+h} \le c_1, \dots, x_{t_k+h} \le c_k}\]
+\[\forall k\in\N,t_k, c_k, h\in\Z\]
+
+Слабо стационарный процесс
+\begin{itemize}
+  \item $\E{x_t^2} < \infty \qquad\forall t\in\Z$
+  \item $\E{x_t^2} = m \qquad\forall t\in\Z$
+  \item $\gamma_x(s,t) = \gamma_x(s+r, t+r) \qquad\forall r,s,t\in\Z$
+\end{itemize}
+
+Автоковариационная функция
+\begin{itemize}
+  \item $\gamma(h) = \E{(x_{t+h}-\mu)(x_t-\mu)} \qquad \forall h\in\Z$
+  \item $\gamma(0) = \E{(x_t-\mu)^2}$
+  \item $\gamma(0) \ge 0$
+  \item $\gamma(0) \ge |\gamma(h)|$
+  \item $\gamma(h) = \gamma(-h)$
+\end{itemize}
+
+Автокорреляционная функция (ACF)
+\[\rho_x(h) = \frac{\cov{x_{t+h},x_t}}{\sqrt{\V{x_{t+h}}\V{x_t}}}
+          = \frac{\gamma(t+h,t)}{\sqrt{\gamma(t+h,t+h)\gamma(t,t)}}
+          = \frac{\gamma(h)}{\gamma(0)}\]
+
+Совместная стационарность временных рядов
+\[\gamma_{xy}(h) = \E{(x_{t+h}-\mu_x)(y_t-\mu_y)}\]
+\[\rho_{xy}(h) = \frac{\gamma_{xy}(h)}{\sqrt{\gamma_x(0)\gamma_y(h)}}\]
+
+Линейный процесс
+\[x_t = \mu + \sum_{j=-\infty}^\infty \psi_j w_{t-j} \quad\text{где}\quad
+\sum_{j=-\infty}^\infty |\psi_j| < \infty\]
+\[\gamma(h) = \sigma_w^2 \sum_{j=-\infty}^\infty \psi_{j+h}\psi_j\]
+
+\subsection{Оценивание корреляции}
+
+Выборочное среднее
+\[\xbar = \frac{1}{n}\sum_{t=1}^n x_t\]
+
+Дисперсия выборочного среднего
+\[\V{\xbar} = \frac{1}{n}\sum_{h=-n}^n \left(1-\frac{|h|}{n}\right)\gamma_x(h)\]
+
+Выборочная автоковариационная функция
+\[\ghat(h) = \frac{1}{n}\sum_{t=1}^{n-h}(x_{t+h}-\xbar)(x_t-\xbar)\]
+
+Выборочная автокорреляционная функция
+\[\rhohat(h) = \frac{\ghat(h)}{\ghat(0)}\]
+
+Выборочная взаимная ковариационная функция
+\[\ghat_{xy}(h) = \frac{1}{n} \sum_{t=1}^{n-h}(x_{t+h}-\xbar)(y_t - \ybar)\]
+
+Выборочная взаимная корреляционная функция
+\[\rhohat_{xy}(h) = \frac{\ghat_{xy}(h)}{\sqrt{\ghat_x(0) \ghat_y(0)}}\]
+
+Свойства
+\begin{itemize}
+  \item $\sigma_{\rhohat_x(h)} = \displaystyle\frac{1}{\sqrt{n}}$
+    если $x_t$ является белым шумом
+  \item $\sigma_{\rhohat_{xy}(h)} = \displaystyle\frac{1}{\sqrt{n}}$
+    если $x_t$ или $y_t$ является белым шумом
+\end{itemize}
+
+\subsection{Нестационарные временные ряды}
+
+Классическая модель разложения
+\[x_t = \mu_t + s_t + w_t\]
+\begin{itemize}
+  \item $\mu_t =$ тренд
+  \item $s_t =$ сезонная компонента
+  \item $w_t =$ случайная шумовая компонента
+\end{itemize}
+
+\subsubsection{Удаление тренда}
+
+Метод наименьших квадратов
+\begin{enumerate}
+  \item Выберите модель тренда, например,
+    $\mu_t = \beta_0 + \beta_1 t + \beta_2 t^2$
+  \item Минимизируйте \rss, чтобы получить оценку тренда
+    $\mhat_t = \bhat_0 + \bhat_1 t + \bhat_2 t^2$
+  \item Остатки считаются шумом $w_t$
+\end{enumerate}
+
+Скользящее среднее
+\begin{itemize}
+  \item Фильтр \emph{низких частот} $v_t$ представляет собой симметричное скользящее среднее $m_t$
+    с $a_j = \frac{1}{2k+1}$:
+    \[v_t = \frac{1}{2k+1} \sum_{i=-k}^k x_{t-1}\]
+  \item Если $\frac{1}{2k+1} \sum_{i=-k}^k w_{t-j} \approx 0$,
+    линейная функция тренда $\mu_t = \beta_0 + \beta_1t$ проходит без
+    искажения
+\end{itemize}
+
+Взятие разностей
+\begin{itemize}
+  \item $\mu_t = \beta_0 + \beta_1t \imp \nabla x_t = \beta_1$
+\end{itemize}
+
+\subsection{Модели ARIMA}
+
+Авторегрессионный полином
+\[\phi(z) = 1 - \phi_1 z - \cdots - \phi_p z_p
+\qquad z \in \C \wedge \phi_p \neq 0\]
+
+Авторегрессионный оператор
+\[\phi(B) = 1 - \phi_1B - \cdots - \phi_pB^p\]
+
+Авторегрессионная модель порядка $p$, $\AR$
+\[x_t = \phi_1 x_{t-1} + \cdots + \phi_p x_{t-p} + w_t \eqv \phi(B)x_t = w_t\]
+
+$\AR[1]$
+\begin{itemize}
+  \item $x_t = \phi^k(x_{t-k}) + \displaystyle\sum_{j=0}^{k-1} \phi^j(w_{t-j})
+    \stackrel{k\to\infty, |\phi| < 1}{=}
+    \underbrace{\sum_{j=0}^\infty \phi^j(w_{t-j})}_{\text{линейный процесс}}$
+\item $\E{x_t} = \sum_{j=0}^\infty\phi^j(\E{w_{t-j}}) = 0$
+\item $\gamma(h) = \cov{x_{t+h},x_t} = \frac{\sigma_w^2\phi^h}{1-\phi^2}$
+\item $\rho(h) = \frac{\gamma(h)}{\gamma(0)} = \phi^h$
+\item $\rho(h) = \phi \rho(h-1) \quad h=1,2,\ldots$
+\end{itemize}
+
+Полином скользящего среднего
+\[\theta(z) = 1 + \theta_1 z + \cdots + \theta_q z_q
+\qquad z \in \C \wedge \theta_q \neq 0\]
+
+Оператор скользящего среднего
+\[\theta(B) = 1 + \theta_1B + \cdots + \theta_pB^p\]
+
+$\MA$ (модель скользящего среднего порядка $q$)
+\[x_t = w_t + \theta_1 w_{t-1} + \cdots + \theta_q w_{t-q}
+\eqv x_t = \theta(B)w_t\]
+\[\E{x_t} = \sum_{j=0}^q \theta_j\E{w_{t-j}} = 0\]
+\[\gamma(h) = \cov{x_{t+h},x_t} = \begin{cases}
+  \sigma_w^2\sum_{j=0}^{q-h} \theta_j\theta_{j+h} & 0 \le h \le q \\
+  0 & h > q
+\end{cases}\]
+
+$\MA[1]$
+\[x_t = w_t + \theta w_{t-1}\]
+\[\gamma(h) = \begin{cases}
+  (1+\theta^2)\sigma_w^2 & h = 0 \\
+  \theta\sigma_w^2 & h = 1 \\
+  0 & h > 1
+\end{cases}\]
+\[\rho(h) = \begin{cases}
+  \frac{\theta}{(1+\theta^2)} & h = 1 \\
+  0 & h > 1
+\end{cases}\]
+
+$\ARMA$
+\[x_t = \phi_1 x_{t-1} + \cdots + \phi_p x_{t-p} + w_t + \theta_1 w_{t-1} +
+\cdots + \theta_q w_{t-q}\]
+\[\phi(B) x_t = \theta(B) w_t\]
+
+Частная автокорреляционная функция (PACF)
+\begin{itemize}
+  \item $x_i^{h-1} \eqdef$ регрессия $x_i$ на
+    $\{x_{h-1}, x_{h-2}, \dots, x_1\}$
+  \item $\phi_{hh} = corr(x_h - x_h^{h-1}, x_0 - x_0^{h-1}) \quad h \ge 2$
+  \item Например, $\phi_{11} = corr(x_1,x_0) = \rho(1)$
+\end{itemize}
+
+$\ARIMA$
+\[\nabla^d x_t = (1-B)^d x_t \text{ является процессом } \ARMA\]
+\[\phi(B)(1-B)^d x_t = \theta(B) w_t\]
+
+Экспоненциально взвешенное скользящее среднее (EWMA)
+\[x_t = x_{t-1} + w_t - \lambda w_{t-1}\]
+\[x_t = \sum_{j=1}^\infty(1-\lambda)\lambda^{j-1} x_{t-j} + w_t
+\quad\text{при } |\lambda| < 1\]
+\[\tilde{x}_{n+1} = (1-\lambda)x_n + \lambda \tilde{x}_n\]
+
+\begin{titemize}{Сезонная модель ARIMA}
+  \item Обозначается $\SARIMA$
+  \item $\Phi_P(B^s) \phi(B) \nabla_s^D \nabla^d x_t
+    = \delta + \Theta_Q(B^s)\theta(B)w_t$
+\end{titemize}
+
+\subsubsection{Причинность и обратимость}
+$\ARMA$ является причинным (не зависит от будущих значений)
+$\eqv \exists \{\psi_j\} : \sum_{j=0}^\infty \psi_j < \infty$ так что
+\[x_t = \sum_{j=0}^\infty w_{t-j} = \psi(B)w_t\]
+
+$\ARMA$ является обратимым
+$\eqv \exists \{\pi_j\} : \sum_{j=0}^\infty \pi_j < \infty$ так что
+\[\pi(B)x_t = \sum_{j=0}^\infty X_{t-j} = w_t\]
+
+Свойства
+\begin{itemize}
+  \item $\ARMA$ причинен $\eqv$
+    корни $\phi(z)$ лежат вне единичной окружности
+    \[\psi(z) = \sum_{j=0}^\infty\psi_j z^j = \frac{\theta(z)}{\phi(z)}
+    \quad |z| \le 1\]
+  \item $\ARMA$ обратим $\eqv$
+    корни $\theta(z)$ лежат вне единичной окружности
+    \[\pi(z) = \sum_{j=0}^\infty\pi_j z^j = \frac{\phi(z)}{\theta(z)}
+    \quad |z| \le 1\]
+\end{itemize}
+
+Поведение ACF и PACF для причинных и обратимых моделей ARMA
+
+\begin{center}
+  \begin{tabular}{|c|ccc|}
+    \hline
+    & $\AR$ & $\MA$ & $\ARMA$\\
+    \hline
+    ACF & затухает & обрывается после лага $q$ & затухает \\
+    PACF & обрывается после лага $p$ & затухает & затухает \\
+    \hline
+  \end{tabular}
+\end{center}
+
+\subsection{Спектральный анализ}
+
+Периодический процесс
+\begin{align*}
+  x_t
+  &= A \cos(2\pi\omega t + \phi) \\
+  &= U_1 \cos(2\pi \omega t) + U_2 \sin(2\pi \omega t)
+\end{align*}
+
+\begin{itemize}
+  \item Частота $\omega$ (число циклов в единицу времени),
+    период $1/\omega$
+  \item Амплитуда $A$
+  \item Фаза $\phi$
+  \item $U_1 = A\cos\phi$ и $U_2 = A\sin\phi$ часто имеют нормальное распределение
+\end{itemize}
+
+Сумма периодических компонент
+\[x_t = \sum_{k=1}^q\left( U_{k1}\cos(2\pi\omega_k t)
++ U_{k2}\sin(2\pi\omega_k t)
+\right)\]
+\begin{itemize}
+  \item $U_{k1}, U_{k2}$, для $k=1,\ldots,q$,
+    — независимые \rv с нулевыми средними и дисперсиями $\sigma_k^2$
+  \item $\gamma(h) = \sum_{k=1}^q \sigma_k^2 \cos(2\pi\omega_k h)$
+  \item $\gamma(0) = \E{x_t^2} = \sum_{k=1}^q \sigma_k^2$
+\end{itemize}
+
+Спектральное представление периодического процесса
+\begin{align*}
+\gamma(h)
+&= \sigma^2 \cos(2\pi\omega_0 h) \\
+&= \frac{\sigma^2}{2} e^{-2\pi i \omega_0 h}
++ \frac{\sigma^2}{2} e^{2\pi i \omega_0 h}\\
+&= \int_{-1/2}^{1/2} e^{2\pi i \omega h} \d{F(\omega)}
+\end{align*}
+
+Спектральная функция распределения
+\[F(\omega)= \begin{cases}
+  0 & \omega < -\omega_0 \\
+  \sigma^2/2 & -\omega \le \omega < \omega_0 \\
+  \sigma^2 & \omega \ge \omega_0
+\end{cases}\]
+\begin{itemize}
+  \item $F(-\infty) = F(-1/2) = 0$
+  \item $F(\infty) = F(1/2) = \gamma(0)$
+\end{itemize}
+
+Спектральная плотность
+\[f(\omega) = \sum_{h=-\infty}^\infty \gamma(h) e^{-2\pi i \omega h}
+\quad -\frac{1}{2} \le \omega \le \frac{1}{2}\]
+\begin{itemize}
+  \item Требуется абсолютная сходимость ряда автоковариаций: $\sum_{h=-\infty}^\infty |\gamma(h)| < \infty
+    \imp \gamma(h) = \int_{-1/2}^{1/2} e^{2\pi i \omega h}f(\omega) \d\omega
+    \quad h=0,\pm1,\ldots$
+  \item $f(\omega) \ge 0$
+  \item $f(\omega) = f(-\omega)$
+  \item $f(\omega) = f(1-\omega)$
+  \item $\gamma(0) = \V{x_t} = \int_{-1/2}^{1/2}f(\omega)\d\omega$
+  \item Белый шум: $f_w(\omega) = \sigma_w^2$
+  \item $\ARMA, \phi(B)x_t = \theta(B)w_t$:
+    \[f_x(\omega) = \sigma_w^2 \frac{|\theta(e^{-2\pi i
+    \omega})|^2}{|\phi(e^{-2\pi i \omega})|^2}\]
+    где $\phi(z) = 1 - \sum_{k=1}^p \phi_k z^k$ и
+    $\theta(z) = 1 + \sum_{k=1}^q \theta_k z^k$
+\end{itemize}
+
+Дискретное преобразование Фурье (DFT)
+\[d(\omega_j) = n^{-1/2} \sum_{i=1}^n x_t e^{-2\pi i\omega_j t}\]
+
+Частоты Фурье (основные частоты)
+\[\omega_j = j/n\]
+
+Обратное дискретное преобразование Фурье
+\[x_t = n^{-1/2} \sum_{j=0}^{n-1} d(\omega_j) e^{2\pi i\omega_j t}\]
+
+Периодограмма
+\[I(j/n) = |d(j/n)|^2\]
+
+Масштабированная периодограмма
+\begin{align*}
+P(j/n)
+&= \frac{4}{n}I(j/n) \\
+&=\left( \frac{2}{n} \sum_{t=1}^n x_t \cos(2\pi t j/n) \right)^2
++ \left( \frac{2}{n} \sum_{t=1}^n x_t \sin(2\pi t j/n) \right)^2
+\end{align*}
+
+\section{Математика}
+
+%\subsection{Orthogonal Functions}
+%
+%$L_2$ space
+%\[L_2(a,b) = \left\{ f: [a,b] \to \R, \int_a^b f(x)^2\dx < \infty \right\}\]
+%
+%Inner Product
+%\[\int f(x)g(x)\dx\]
+%
+%Norm
+%\[\|f\| = \sqrt{\int f^2(x) \dx}\]
+%
+%Orthogonality (for a series of functions $\phi_i$)
+%\begin{align*}
+%  \int \phi_j^2(x)\dx &= 1 \; \forall j \\
+%  \int \phi_i(x)\phi_j(x)\dx &= 0 \; \forall i \neq j
+%\end{align*}
+%
+%An orthogonal sequence $\phi_1, \phi_2,\dots$ is \emph{complete} if the only
+%function that is is orthogonal to each $\phi_j$ is the zero function. Then,
+%$\phi_1, \phi_2,\dots$ form an \emph{orthogonal basis} in $L_2$:
+%\[f \in L_2 \imp f(x) = \sum_{j=1}^\infty \beta_j \phi_j(x)
+%\quad \text{где } \beta_j = \int_a^b f(x)\phi_j(x) \dx\]
+%
+%Cosine Basis
+%\begin{align*}
+%  \phi_0(x) &= 1 \\
+%  \phi_j(x) &= \sqrt{2}\cos(j\pi x) \quad \forall j\ge1
+%\end{align*}
+%
+%\raggedright
+%\textsc{Parseval}'s Relation
+%\[\|f\|^2 \equiv \int f^2(x)\dx = \sum_{j=1}^\infty \equiv \|\beta\|^2\]
+%
+%\textsc{Legendre} Polynomials
+%\begin{align*}
+%  x &\in [-1,1] \\
+%  P_0(x) &= 1\\
+%  P_1(x) &= x \\
+%  P_{j+1}(x) &= \frac{(2j+1)x(P_j(x) - jP_{j-1}(x)}{j+1} \\
+%  \phi_j(x) &= \sqrt{(2j+1)/2} P_j(x) \quad \text{orthogonal basis for }
+%  L_2(-1,1)
+%\end{align*}
+
+\subsection{Гамма-функция}
+\label{sec:math:gamma}
+
+\begin{itemize}
+  \item Полная гамма-функция:
+    $\displaystyle\Gamma(s) = \int_0^\infty t^{s-1} e^{-t}dt$
+  \item Верхняя неполная гамма-функция:
+    $\displaystyle\Gamma(s,x) = \int_x^\infty t^{s-1} e^{-t}dt$
+  \item Нижняя неполная гамма-функция:
+    $\displaystyle\gamma(s,x) = \int_0^x t^{s-1} e^{-t}dt$
+  \item $\Gamma(\alpha + 1) = \alpha \Gamma(\alpha) \qquad \alpha>1$
+  \item $\Gamma(n) = (n-1)! \qquad n \in \mathbb N$
+  \item $\Gamma(0) = \Gamma(-1) = \infty$
+  \item $\Gamma(1/2) = \sqrt{\pi}$
+  \item $\Gamma(-1/2) = -2 \Gamma(1/2)$
+\end{itemize}
+
+\subsection{Бета-функция}
+\label{sec:math:beta}
+
+\begin{itemize}
+  \item Полная бета-функция: $\text{B}(x,y) = \text{B}(y,x)
+    = \displaystyle\int_0^1 t^{x-1}(1-t)^{y-1} \,dt
+    = \displaystyle\frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}$
+%    \item $\alpha,\beta \in \mathbb N \imp \displaystyle
+%      \text{B}(\alpha,\beta) = \frac{(\alpha-1)!(\beta-1)!}{(\alpha+\beta-1)!}$
+\item Неполная бета-функция: $\text{B}(x;\,a,b)
+    = \displaystyle\int_0^x t^{a-1}(1-t)^{b-1} \,dt$
+  \item Регуляризованная неполная бета-функция: \\
+    $I_x(a,b) = \displaystyle\frac{\text{B}(x;\,a,b)}{\text{B}(a,b)}
+      \stackrel{a,b\in\mathbb N}{=}
+      \sum_{j=a}^{a+b-1} \frac{(a+b-1)!}{j!(a+b-1-j)!}x^j(1-x)^{a+b-1-j}$
+  \item $I_0(a,b) = 0 \qquad I_1(a,b) = 1$
+  \item $I_x(a,b) = 1 - I_{1-x}(b,a)$
+\end{itemize}
+
+\subsection{Ряды}
+
+\begin{multicols}{2}
+  \begin{titemize}{Конечные суммы}
+  \item $\displaystyle\sum_{k=1}^n k = \frac{n(n+1)}{2}$
+  \item $\displaystyle\sum_{k=1}^n (2k-1) = n^2$
+  \item $\displaystyle\sum_{k=1}^n k^2 = \frac{n(n+1)(2n+1)}{6}$
+  \item $\displaystyle\sum_{k=1}^n k^3 = \left(\frac{n(n+1)}{2}\right)^2$
+  \item $\displaystyle\sum_{k=0}^n c^k = \frac{c^{n+1}-1}{c-1} \quad c\neq1$
+\end{titemize}
+
+\begin{titemize}{Биномиальные тождества}
+  \item $\displaystyle\sum_{k=0}^n \binom{n}{k} = 2^n$
+  \item $\displaystyle\sum_{k=0}^n \binom{r+k}{k}=\binom{r+n+1}{n}$
+  \item $\displaystyle\sum_{k=0}^n \binom{k}{m}=\binom{n+1}{m+1}$
+  \item Тождество \textsc{Вандермонда}:\\
+    $\displaystyle\sum_{k=0}^r \binom{m}{k}\binom{n}{r-k}=\binom{m+n}{r}$
+  \item Бином Ньютона:\\
+    $\displaystyle\sum_{k=0}^n \binom{n}{k}a^{n-k}b^k = (a+b)^n$
+\end{titemize}
+\end{multicols}
+
+Бесконечные суммы
+\begin{itemize}
+  \item $\displaystyle\sum_{k=0}^\infty p^k = \frac{1}{1-p},
+    \quad \sum_{k=1}^\infty p^k = \frac{p}{1-p} \quad |p|<1$
+  \item $\displaystyle\sum_{k=0}^\infty kp^{k-1}
+    = \displaystyle\frac{d}{dp}\left(\sum_{k=0}^\infty p^k\right)
+    = \displaystyle\frac{d}{dp}\left(\frac{1}{1-p}\right)
+    = \frac{1}{(1-p)^2} \quad |p|<1$
+  \item $\displaystyle\sum_{k=0}^\infty \binom{r+k-1}{k} x^k = (1-x)^{-r}
+    \quad r\in\mathbb N^+$
+  \item $\displaystyle\sum_{k=0}^\infty \binom{\alpha}{k} p^k
+    = (1+p)^\alpha \quad |p|<1\,,\,\alpha \in \mathbb C$
+\end{itemize}
+
+%\subsection{Integrals}
+%
+%\begin{itemize}
+%  \item $\displaystyle\int_{-\infty}^\infty e^{-\frac{x^2}{2}}dx
+%    = \sqrt{2\pi}$
+%\end{itemize}
+
+\vfill~
+
+\subsection{Комбинаторика}
+
+Выборка
+\begin{center}
+  \begin{tabular}[h]{|l*2{|>{\begin{math}\displaystyle}c<{\end{math}}}|}
+  \hline &&\\[-1.5ex]
+  $k$ элементов из $n$ & \text{без возвращения} & \text{с возвращением}
+  \\[1ex]
+  \hline
+  упорядоченный выбор & n^{\underline k}
+    = \displaystyle\prod_{i=0}^{k-1}(n-i)
+    = \frac{n!}{(n-k)!}
+    & n^k \\[3ex]
+    неупорядоченный выбор & \binom{n}{k} = \frac{n^{\underline k}}{k!}
+    = \frac{n!}{k!(n-k)!} &
+    \binom{n-1+r}{r}=\binom{n-1+r}{n-1} \\[3ex]
+  \hline
+\end{tabular}
+\end{center}
+
+\newcommand{\stirling}[2]{\genfrac{\{}{\}}{0pt}{}{#1}{#2}}
+
+Числа Стирлинга второго рода
+\[\stirling{n}{k} = k\stirling{n-1}{k}+\stirling{n-1}{k-1}
+  \qquad 1\le k \le n \qquad
+  \stirling{n}{0} = \begin{cases} 1 & n = 0\\ 0 & \text{иначе} \end{cases}\]
+
+Разбиения
+\[P_{n+k,k} = \sum_{i=1}^n P_{n,i} \qquad \qquad
+  k>n:\;P_{n,k} = 0 \qquad n\ge1:\;P_{n,0} = 0, \; P_{0,0} = 1\]
+
+% Distinguishability.
+\def\distinguishable{\ensuremath{D}\xspace}
+\def\indistinguishable{\ensuremath{\neg \distinguishable}\xspace}
+Шары и урны \qquad $f: B \to U$ \qquad
+\distinguishable = различимы,
+\indistinguishable = неразличимы.
+\begin{center}
+  \begin{tabular}[h]{|l*4{|>{\begin{math}\displaystyle}c<{\end{math}}}|}
+    \hline &&&&\\[-1.5ex]
+    $|B|=n$, $|U|=m$ & f \text{произвольна} & f \text{инъективна} &
+    f \text{сюръективна} & f \text{биективна} \\[1ex]
+    \hline
+    \hline &&&&\\[-2ex]
+    $B:\distinguishable,\; U:\distinguishable$ &
+      m^n & \begin{cases} m^{\underline n} & m \ge n\\
+      0 & \text{иначе} \end{cases} & m!\,\stirling{n}{m} &
+      \begin{cases} n! & m = n\\ 0 & \text{иначе} \end{cases}\\[3ex]
+    \hline &&&&\\[-2ex]
+    $B:\indistinguishable,\; U:\distinguishable$ &
+      \binom{m+n-1}{n} & \binom{m}{n} &
+      \binom{n-1}{m-1} &
+      \begin{cases} 1 & m = n\\ 0 & \text{иначе} \end{cases}\\[3ex]
+    \hline &&&&\\[-2ex]
+    $B:\distinguishable,\; U:\indistinguishable$ &
+      \sum_{k=1}^m \stirling{n}{k} & \begin{cases} 1 &
+      m\ge n\\ 0 & \text{иначе} \end{cases} & \stirling{n}{m} &
+      \begin{cases} 1 & m = n\\ 0 & \text{иначе} \end{cases}\\[3ex]
+    \hline &&&&\\[-2ex]
+    $B:\indistinguishable,\; U:\indistinguishable$ & \sum_{k=1}^m P_{n,k} &
+      \begin{cases} 1 & m \ge n\\ 0 & \text{иначе} \end{cases} & P_{n,m} &
+      \begin{cases} 1 & m = n\\ 0 & \text{иначе} \end{cases}\\[3ex]
+    \hline
+  \end{tabular}
+\end{center}
+
+%  Convergence
+%  \begin{itemize}
+%    \item $\displaystyle\sum_{k=1}^\infty a_n$ converges if
+%      $\displaystyle\lim_{n \to \infty} \left|\frac{a_{n+1}}{a_n}\right| < 1$
+%    \item $\displaystyle\sum_{k=1}^\infty a_n$ diverges if
+%      $\displaystyle\lim_{n \to \infty} a_n \neq 0$
+%    \item $\displaystyle\sum_{k=1}^\infty n^{-p}$ converges if $p > 1$
+%  \end{itemize}
+
+%  \subsection{Calculus}
+%
+%  Polar Coordinates
+%  \begin{itemize}
+%    \item $x = r\cos\theta \qquad y = r\sin\theta$
+%    \item $r = \sqrt{y^2+x^2}$
+%    \item $\theta =
+%      \begin{cases}
+%        0 & \mbox{if } x = 0 \mbox{ and } y = 0\\
+%        \arcsin(\frac{y}{r}) & \mbox{if } x \geq 0 \\
+%        -\arcsin(\frac{y}{r}) + \pi & \mbox{if } x < 0\\
+%      \end{cases}$
+%  \end{itemize}
+
+\columnbreak
+{
+\footnotesize
+\bibliographystyle{abbrv}
+\bibliography{../literature}
+}
+
+\end{multicols*}
+
+\newpage
+
+\begin{sidewaysfigure}
+  \captionsetup{labelformat=empty,labelsep=none}
+  \includegraphics[width=\textwidth]{../figs/relationships}
+  \caption{Взаимосвязи одномерных распределений. Предоставлено Leemis и
+  McQueston~\cite{Leemis08}.}
+\end{sidewaysfigure}
+
+\end{document}

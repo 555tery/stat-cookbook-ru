@@ -16,6 +16,11 @@ doc: $(DOC:.tex=.pdf)
 	@egrep -q $(RERUN) $*.log && pdflatex $<; true
 	@egrep -q $(RERUN) $*.log && pdflatex $<; true
 
+# Build Russian plots and the translation with Tectonic (XeTeX-based).
+ru:
+	STAT_COOKBOOK_LANG=ru Rscript --vanilla figs/distributions.R
+	tectonic --keep-logs ru/stat-cookbook-ru.tex
+
 latexmk:
 	-latexmk -pvc -pdf $(DOC)
 
@@ -26,4 +31,4 @@ clean: purge
 	$(MAKE) -C figs $@
 	-rm -f $(DOC:.tex=.pdf)
 
-.PHONY: all figs purge clean
+.PHONY: all figs ru purge clean

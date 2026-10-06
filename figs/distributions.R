@@ -11,9 +11,47 @@ library(grid)
 library(RColorBrewer)
 library(VGAM) # [dp]pareto
 
+# The default build remains English. Set STAT_COOKBOOK_LANG=ru to create the
+# localized plots for the Russian edition in ru/figs/.
+language = Sys.getenv("STAT_COOKBOOK_LANG", "en")
+if (!language %in% c("en", "ru"))
+  stop("STAT_COOKBOOK_LANG must be 'en' or 'ru'")
+
+plot.titles.ru = c(
+  "Uniform (discrete)" = "Равномерное (дискретное)",
+  "Uniform (continuous)" = "Равномерное (непрерывное)",
+  "Binomial" = "Биномиальное",
+  "Geometric" = "Геометрическое",
+  "Poisson" = "Пуассона",
+  "Normal" = "Нормальное",
+  "Log-Normal" = "Логнормальное",
+  "Exponential" = "Экспоненциальное",
+  "Gamma" = "Гамма",
+  "Inverse Gamma" = "Обратное гамма-распределение",
+  "Beta" = "Бета",
+  "Weibull" = "Вейбулла",
+  "Pareto" = "Парето"
+)
+
+localize.title = function(title) {
+  if (language != "ru" || !is.character(title))
+    return(title)
+  translated = unname(plot.titles.ru[title])
+  if (length(translated) == 0 || is.na(translated)) title else translated
+}
+
+localize.mode = function(mode) {
+  if (language != "ru")
+    return(toupper(mode))
+  c(pmf="Функция\nвероятностей",
+    pdf="Плотность\nвероятности",
+    cdf="Функция\nраспределения")[[mode]]
+}
+
 line_width = 1.3
 point_size = 4
-theme_set(theme_bw(base_size=20))
+theme_set(theme_bw(base_size=20,
+                   base_family=if (language == "ru") "Arial" else ""))
 theme_update(legend.background=element_rect(fill=alpha("white", 0)),
              legend.key=element_rect(colour="white"),
              legend.key.width=unit(3, "lines"),
@@ -47,8 +85,8 @@ plot.dist <- function(xseq, theta, dist, mode, title, lab.fn) {
   molten <- melt(values, 1)
   labels <- apply(theta, 1, function(x) do.call(lab.fn, as.list(t(x))))
   p <- ggplot(molten, aes(x=x, y=value, color=variable, linetype=variable)) +
-       ggtitle(title) +
-       ylab(toupper(mode)) +
+       ggtitle(localize.title(title)) +
+       ylab(localize.mode(mode)) +
        scale_color_discrete(labels=labels) +
        scale_linetype_discrete(labels=labels)
 
@@ -89,12 +127,12 @@ plot.uniform.cdf.discrete <- function() {
     geom_segment(aes(x=6, y=0.8, xend=6.9, yend=0.8)) +
     geom_point(aes(x=xseq+1), size=point_size, color="white", shape=19) +
     geom_point(aes(x=xseq+1), size=point_size, shape=1) +
-    ggtitle("Uniform (discrete)") +
-    labs(x="x", y="CDF") +
+    ggtitle(localize.title("Uniform (discrete)")) +
+    labs(x="x", y=localize.mode("cdf")) +
     theme(panel.grid.minor=element_blank()) +
     scale_x_continuous(name="x", limits=c(3.1, 6.9), breaks=4:6,
                        labels=c("a", "", "b")) +
-    scale_y_continuous(name="CDF", limits=c(0.2, 0.8),
+    scale_y_continuous(name=localize.mode("cdf"), limits=c(0.2, 0.8),
                        breaks=c(0.2, 0.4, 0.6, 0.8),
                        labels=c(0, expression(frac(i, n)),
                                 expression(frac(i, n)), 1.0))
@@ -104,8 +142,8 @@ plot.uniform.cdf.continuous <- function() {
   x <- as.data.frame(rbind(c(0,0,2,0), c(2,0,6,1), c(6,1,8,1)))
   ggplot(x) +
     geom_segment(aes(x=V1, y=V2, xend=V3, yend=V4)) +
-    ggtitle("Uniform (continuous)") +
-    labs(x="x", y="CDF") +
+    ggtitle(localize.title("Uniform (continuous)")) +
+    labs(x="x", y=localize.mode("cdf")) +
     theme(panel.grid.minor=element_blank()) +
     scale_x_continuous(breaks=c(2,6), labels=c("a", "b")) +
     scale_y_continuous(limits=0:1, breaks=0:1, labels=0:1)
@@ -117,13 +155,13 @@ plot.uniform.pmf <- function() {
     aes(x=x0, y=y1) +
     geom_point(size=point_size) +
 #    geom_segment(aes(x=x1, xend=x1, y=y0, yend=y1), linetype="dashed") +
-    labs(title="Uniform (discrete)") +
+    labs(title=localize.title("Uniform (discrete)")) +
     theme(panel.grid.minor=element_blank()) +
     scale_x_discrete(name="x",
                      breaks=xseq,
                      limits=1:10,
                      labels=c("a", rep("", length(xseq)-2), "b")) +
-    scale_y_continuous(name="PMF",
+    scale_y_continuous(name=localize.mode("pmf"),
                        breaks=0.5,
                        limits=0:1,
                        labels=expression(frac(1, n)))
@@ -153,12 +191,12 @@ plot.uniform.pdf <- function() {
     geom_point(data=hollow, aes(x=x, y=y), size=point_size, shape=21,
                fill="white") +
     theme(panel.grid.minor=element_blank()) +
-    ggtitle("Uniform (continuous)") +
+    ggtitle(localize.title("Uniform (continuous)")) +
     scale_x_continuous(name="x",
                        breaks=c(solid[1,2], solid[3,1]),
                        limits=c(solid[1,1], solid[3,2]),
                        labels=c("a", "b")) +
-    scale_y_continuous(name="PDF",
+    scale_y_continuous(name=localize.mode("pdf"),
                        breaks=solid[2,3],
                        limits=0:1,
                        labels=expression(frac(1, b-a)))
@@ -208,8 +246,10 @@ plot.lognormal <- function(mode, xmin=0, xmax=3,
 }
 
 plot.student <- function(mode, xmin=-5, xmax=5,
-                         theta=data.frame(c(1,2,5,Inf)),
-                         title=expression(bold("Student\'s") ~ italic(t))) {
+                        theta=data.frame(c(1,2,5,Inf)),
+                        title=if (language == "ru")
+                          expression("Стьюдента" ~ italic(t)) else
+                          expression(bold("Student\'s") ~ italic(t))) {
   lab.fn <- function(x) {
     if (x == Inf)
       quote(nu==infinity)
@@ -314,7 +354,14 @@ plot.pareto <- function(mode, xmin=0.8, xmax=2.5,
 # --------------------------------------------------------------------------- #
 
 store <- function(name, p) {
-  ggsave(paste(name, "pdf", sep="."), p)
+  output_dir = if (language == "ru") "ru/figs" else "."
+  if (language == "ru")
+    dir.create(output_dir, recursive=TRUE, showWarnings=FALSE)
+  output = file.path(output_dir, paste(name, "pdf", sep="."))
+  if (language == "ru")
+    ggsave(output, p, device=cairo_pdf, family="Arial")
+  else
+    ggsave(output, p)
 }
 
 store("uniform-pmf", plot.uniform.pmf())

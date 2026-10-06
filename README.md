@@ -16,6 +16,19 @@ You can build the cookbook locally via:
 This first generates the distribution plots via R and then compiles the LaTeX source.
 You may have to install a few missing packages via CRAN.
 
+Russian version
+---------------
+
+The Russian translation is in `ru/stat-cookbook-ru.tex`; the English document
+and default `make` build remain unchanged. Build the translation with `make ru`.
+This target creates separately localized plots with the existing R script and
+compiles them with Tectonic (a XeTeX-based engine). R, the packages required by
+`figs/distributions.R`, Tectonic, and the Times New Roman, Arial, and Courier New
+fonts must be available.
+
+See the [Russian version and build instructions](ru/README.md), or download the
+[compiled Russian PDF](ru/stat-cookbook-ru.pdf).
+
 License
 -------
 
